@@ -8,8 +8,16 @@ export class RewardController {
    */
   static async createReward(req: Request, res: Response) {
     try {
-      const userId = (req as any).user.userId;
+      const userId = (req as any).user.id;
       const { childProfileId, title, description, pointCost } = req.body;
+
+      console.log('[RewardController.createReward] Request:', {
+        userId,
+        childProfileId,
+        title,
+        description,
+        pointCost,
+      });
 
       const reward = await RewardService.createReward(
         {
@@ -21,11 +29,14 @@ export class RewardController {
         userId
       );
 
+      console.log('[RewardController.createReward] Success:', reward.id);
+
       res.status(201).json({
         success: true,
         data: reward,
       });
     } catch (error: any) {
+      console.error('[RewardController.createReward] Error:', error.message);
       res.status(400).json({
         success: false,
         error: error.message,

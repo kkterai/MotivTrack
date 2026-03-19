@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useTaskStore } from '../stores/useTaskStore';
 import { useRewardStore } from '../stores/useRewardStore';
 import { useNotificationStore } from '../stores/useNotificationStore';
+import { childProfileService } from '../services/childProfiles';
 import { COLORS } from '../utils/constants';
 import { Button, Card, Input } from '../components/common';
 
@@ -11,6 +13,7 @@ import { Button, Card, Input } from '../components/common';
  * Matches the design from screenshots with tabs and management interfaces
  */
 export default function ParentDashboard() {
+  const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const { tasks, fetchTasks, createTask, updateTask, deleteTask } = useTaskStore();
   const { rewards, fetchRewards, createReward, updateReward, deleteReward } = useRewardStore();
@@ -21,29 +24,53 @@ export default function ParentDashboard() {
   const [childProfiles, setChildProfiles] = useState([]);
   const [selectedChild, setSelectedChild] = useState(null);
 
-  // Load data on mount
+  // Load data on mount and check onboarding status
   useEffect(() => {
     const loadData = async () => {
       if (!user?.id) return;
       
       try {
         setLoading(true);
-        // TODO: Fetch child profiles for this parent from API
-        // Child profiles will be created via:
-        // 1. Onboarding flow (when parent first logs in)
-        // 2. Account settings page (for adding additional children)
         
-        // For now, fetch notifications only
+        console.log('[ParentDashboard] Fetching child profiles for user:', user.id, 'role:', user.role);
+        
+        // Fetch child profiles for this parent
+        const profilesResponse = await childProfileService.getMyChildProfiles();
+        console.log('[ParentDashboard] Child profiles response:', profilesResponse);
+        
+        const profiles = profilesResponse.data || [];
+        console.log('[ParentDashboard] Parsed profiles:', profiles, 'count:', profiles.length);
+        
+        // If admin parent has no child profiles, redirect to onboarding
+        if (user.role === 'admin_parent' && profiles.length === 0) {
+          console.log('[ParentDashboard] No child profiles found, redirecting to onboarding');
+          navigate('/parent/onboarding', { replace: true });
+          return;
+        }
+        
+        console.log('[ParentDashboard] Child profiles found, loading dashboard');
+        setChildProfiles(profiles);
+        if (profiles.length > 0) {
+          setSelectedChild(profiles[0].id);
+        }
+        
+        // Fetch notifications
         await fetchNotifications();
       } catch (error) {
-        console.error('Error loading parent dashboard:', error);
+        console.error('[ParentDashboard] Error loading parent dashboard:', error);
+        // If there's an error fetching profiles, assume no profiles and redirect
+        if (user.role === 'admin_parent') {
+          console.log('[ParentDashboard] Error occurred, redirecting admin parent to onboarding');
+          navigate('/parent/onboarding', { replace: true });
+          return;
+        }
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, [user]);
+  }, [user, navigate, fetchNotifications]);
 
   if (loading) {
     return (

@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { childProfileService } from '../services/childProfiles';
 import { invitationService } from '../services/invitations';
-import { tasksService } from '../services/tasks';
-import { rewardsService } from '../services/rewards';
+import { taskService } from '../services/tasks';
+import { rewardService } from '../services/rewards';
 import { COLORS } from '../utils/constants';
 import { Button, Card, Input } from '../components/common';
 
@@ -62,22 +62,11 @@ export default function ParentOnboarding() {
   };
 
   // Step 2: Give Head Start
-  const handleStep2Submit = async () => {
-    setLoading(true);
+  // Note: Welcome bonus was already awarded in Step 1 during child profile creation
+  // This step just allows parents to see/confirm the bonus amount before proceeding
+  const handleStep2Submit = () => {
     setError(null);
-
-    try {
-      if (welcomeBonus > 0) {
-        await childProfileService.updateChildProfile(childProfile.id, {
-          welcomeBonusPoints: welcomeBonus,
-        });
-      }
-      setCurrentStep(3);
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to award bonus points');
-    } finally {
-      setLoading(false);
-    }
+    setCurrentStep(3);
   };
 
   // Step 3: What Can [Child] Earn?
@@ -91,16 +80,31 @@ export default function ParentOnboarding() {
   };
 
   const handleAddReward = async (rewardData) => {
+    console.log('[ParentOnboarding.handleAddReward] Called with:', rewardData);
+    console.log('[ParentOnboarding.handleAddReward] childProfile:', childProfile);
+    
+    if (!childProfile || !childProfile.id) {
+      setError('Child profile not found. Please go back to Step 1 and create the child profile again.');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
 
     try {
-      const response = await rewardsService.createReward({
+      const payload = {
         ...rewardData,
         childProfileId: childProfile.id,
-      });
+      };
+      console.log('[ParentOnboarding.handleAddReward] Calling API with:', payload);
+      
+      const response = await rewardService.createReward(payload);
+      console.log('[ParentOnboarding.handleAddReward] Success:', response);
+      
       setRewards([...rewards, response.data]);
     } catch (err) {
+      console.error('[ParentOnboarding.handleAddReward] Error:', err);
+      console.error('[ParentOnboarding.handleAddReward] Error response:', err.response);
       setError(err.response?.data?.error || 'Failed to create reward');
     } finally {
       setLoading(false);
@@ -122,7 +126,7 @@ export default function ParentOnboarding() {
     setError(null);
 
     try {
-      const response = await tasksService.createTask({
+      const response = await taskService.createTask({
         ...taskData,
         childProfileId: childProfile.id,
       });

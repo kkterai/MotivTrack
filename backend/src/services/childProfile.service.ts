@@ -63,9 +63,10 @@ export class ChildProfileService {
     await prisma.streakRecord.create({
       data: {
         childProfileId: childProfile.id,
-        currentStreak: 0,
+        currentDailyStreak: 0,
+        currentWeeklyStreak: 0,
         longestStreak: 0,
-        lastTaskDate: null,
+        lastCompletedDate: null,
       },
     });
 

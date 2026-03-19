@@ -14,7 +14,7 @@ router.use(authenticate);
 // Create invitation (admin_parent only)
 router.post(
   '/',
-  requireRole(['admin_parent']),
+  requireRole('admin_parent'),
   InvitationController.createInvitation
 );
 
@@ -27,14 +27,14 @@ router.post('/:token/accept', InvitationController.acceptInvitation);
 // Resend invitation (admin_parent only)
 router.post(
   '/:id/resend',
-  requireRole(['admin_parent']),
+  requireRole('admin_parent'),
   InvitationController.resendInvitation
 );
 
 // Cancel invitation (admin_parent only)
 router.delete(
   '/:id',
-  requireRole(['admin_parent']),
+  requireRole('admin_parent'),
   InvitationController.cancelInvitation
 );
 
