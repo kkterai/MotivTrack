@@ -54,7 +54,7 @@ export class RewardService {
         isActive: true,
       },
       orderBy: {
-        pointCost: 'asc', // Cheapest first
+        pointsCost: 'asc', // Cheapest first
       },
     });
 

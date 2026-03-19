@@ -1,288 +1,657 @@
-import { useState } from 'react';
-import { 
-  PendingClaimsList, 
-  PendingRedemptionsList, 
-  TaskManagement, 
-  RewardManagement,
-  TeacherStatusList 
-} from '../components/parent';
-import ChildDashboard from './ChildDashboard';
-import { Button, Card } from '../components/common';
+import { useState, useEffect } from 'react';
+import { useAuthStore } from '../stores/useAuthStore';
+import { useTaskStore } from '../stores/useTaskStore';
+import { useRewardStore } from '../stores/useRewardStore';
+import { useNotificationStore } from '../stores/useNotificationStore';
 import { COLORS } from '../utils/constants';
+import { Button, Card, Input } from '../components/common';
 
 /**
  * ParentDashboard - Main dashboard for parent users
- * Implements switchable view: Management Panel ↔ Read-Only Child Views
- * Preserves exact layout and functionality from original ParentView
- * 
- * @param {Object} props - Component props
- * @param {string} props.userRole - 'admin_parent' or 'delivery_parent'
- * @param {Array} props.children - Array of child profile objects
- * @param {Array} props.pendingClaims - Claims awaiting verification
- * @param {Function} props.onApproveClaim - Callback when claim is approved
- * @param {Function} props.onApproveClaimExtra - Callback when claim is approved with bonus
- * @param {Function} props.onRequestRedo - Callback when redo is requested
- * @param {Array} props.pendingRedemptions - Redemptions awaiting delivery
- * @param {Function} props.onMarkDelivered - Callback when reward is marked delivered
- * @param {Array} props.tasks - All tasks (for management)
- * @param {Function} props.onAddTask - Callback when task is created
- * @param {Function} props.onEditTask - Callback when task is edited
- * @param {Function} props.onArchiveTask - Callback when task is archived
- * @param {Array} props.rewards - All rewards (for management)
- * @param {Function} props.onAddReward - Callback when reward is created
- * @param {Function} props.onEditReward - Callback when reward is edited
- * @param {Function} props.onRetireReward - Callback when reward is retired
- * @param {Array} props.teachers - Array of teacher objects
- * @param {Array} props.teacherReportsToday - Reports submitted today
- * @param {string} props.today - Today's date string
+ * Matches the design from screenshots with tabs and management interfaces
  */
-export default function ParentDashboard({
-  userRole,
-  children = [],
-  pendingClaims = [],
-  onApproveClaim,
-  onApproveClaimExtra,
-  onRequestRedo,
-  pendingRedemptions = [],
-  onMarkDelivered,
-  tasks = [],
-  onAddTask,
-  onEditTask,
-  onArchiveTask,
-  rewards = [],
-  onAddReward,
-  onEditReward,
-  onRetireReward,
-  teachers = [],
-  teacherReportsToday = [],
-  today,
-}) {
-  const [currentView, setCurrentView] = useState('management'); // 'management' or child ID
-  const [managementTab, setManagementTab] = useState('pending'); // 'pending', 'tasks', 'rewards', 'teachers'
+export default function ParentDashboard() {
+  const { user, logout } = useAuthStore();
+  const { tasks, fetchTasks, createTask, updateTask, deleteTask } = useTaskStore();
+  const { rewards, fetchRewards, createReward, updateReward, deleteReward } = useRewardStore();
+  const { notifications, fetchNotifications } = useNotificationStore();
+  
+  const [activeTab, setActiveTab] = useState('verify'); // verify, inbox, school, tasks, rewards
+  const [loading, setLoading] = useState(true);
+  const [childProfiles, setChildProfiles] = useState([]);
+  const [selectedChild, setSelectedChild] = useState(null);
 
-  const isAdminParent = userRole === 'admin_parent';
-  const selectedChild = children.find(c => c.id === currentView);
+  // Load data on mount
+  useEffect(() => {
+    const loadData = async () => {
+      if (!user?.id) return;
+      
+      try {
+        setLoading(true);
+        // TODO: Fetch child profiles for this parent from API
+        // Child profiles will be created via:
+        // 1. Onboarding flow (when parent first logs in)
+        // 2. Account settings page (for adding additional children)
+        
+        // For now, fetch notifications only
+        await fetchNotifications();
+      } catch (error) {
+        console.error('Error loading parent dashboard:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Management Panel View
-  const renderManagementPanel = () => (
-    <div style={{ width: '100%', maxWidth: 800, margin: '0 auto', padding: '20px' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ 
-          fontSize: '28px', 
-          fontWeight: '700', 
-          color: COLORS.textPrimary,
-          marginBottom: '8px',
-        }}>
-          Parent Dashboard
-        </h1>
-        <p style={{ fontSize: '16px', color: COLORS.textSecondary }}>
-          {isAdminParent ? 'Manage tasks, rewards, and verify completions' : 'Verify tasks and deliver rewards'}
-        </p>
+    loadData();
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        background: COLORS.background,
+      }}>
+        <div style={{ fontSize: '18px', color: COLORS.textSecondary }}>
+          Loading dashboard...
+        </div>
       </div>
+    );
+  }
 
-      {/* Child Selector */}
-      {children.length > 0 && (
-        <Card style={{ marginBottom: '20px' }}>
-          <div style={{ marginBottom: '12px', fontSize: '14px', fontWeight: '600', color: COLORS.textPrimary }}>
-            View Child Dashboard
+  return (
+    <div style={{ minHeight: '100vh', background: COLORS.background }}>
+      {/* Header */}
+      <div style={{
+        background: COLORS.gradient,
+        padding: '20px',
+        color: 'white',
+      }}>
+        <div style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '50%',
+              background: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '24px',
+            }}>
+              👨‍👩‍👧
+            </div>
+            <div>
+              <h1 style={{ fontSize: '24px', fontWeight: '700', margin: 0 }}>
+                Parent Dashboard
+              </h1>
+              <p style={{ fontSize: '14px', margin: '4px 0 0 0', opacity: 0.9 }}>
+                {user?.name || 'Parent'}
+              </p>
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {children.map(child => (
-              <Button
-                key={child.id}
-                variant="secondary"
-                onClick={() => setCurrentView(child.id)}
-              >
-                👀 View {child.name}'s Dashboard
-              </Button>
-            ))}
-          </div>
-        </Card>
-      )}
+          <button
+            onClick={logout}
+            style={{
+              background: 'rgba(255,255,255,0.2)',
+              color: 'white',
+              border: '2px solid white',
+              padding: '10px 20px',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'white';
+              e.target.style.color = COLORS.primary;
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(255,255,255,0.2)';
+              e.target.style.color = 'white';
+            }}
+          >
+            Logout
+          </button>
+        </div>
+      </div>
 
       {/* Tab Navigation */}
       <div style={{
-        display: 'flex',
-        gap: '8px',
-        marginBottom: '20px',
-        background: COLORS.background,
-        padding: '4px',
-        borderRadius: '12px',
-        overflowX: 'auto',
+        background: 'white',
+        borderBottom: `2px solid ${COLORS.borderLight}`,
+        position: 'sticky',
+        top: 0,
+        zIndex: 10,
       }}>
+        <div style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          display: 'flex',
+          gap: '8px',
+          padding: '0 20px',
+        }}>
+          {[
+            { id: 'verify', label: '✓ Verify', icon: '✓' },
+            { id: 'inbox', label: '📬 Inbox', icon: '📬' },
+            { id: 'school', label: '🏫 School', icon: '🏫' },
+            { id: 'tasks', label: '✏️ Tasks', icon: '✏️' },
+            { id: 'rewards', label: '🎁 Rewards', icon: '🎁' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                flex: 1,
+                padding: '16px 8px',
+                background: 'none',
+                border: 'none',
+                borderBottom: activeTab === tab.id ? `3px solid ${COLORS.primary}` : '3px solid transparent',
+                color: activeTab === tab.id ? COLORS.primary : COLORS.textSecondary,
+                fontWeight: activeTab === tab.id ? '700' : '500',
+                fontSize: '14px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '20px',
+      }}>
+        {activeTab === 'verify' && <VerifyTab />}
+        {activeTab === 'inbox' && <InboxTab />}
+        {activeTab === 'school' && <SchoolTab />}
+        {activeTab === 'tasks' && <TasksTab tasks={tasks} onCreateTask={createTask} onUpdateTask={updateTask} onDeleteTask={deleteTask} />}
+        {activeTab === 'rewards' && <RewardsTab rewards={rewards} onCreateReward={createReward} onUpdateReward={updateReward} onDeleteReward={deleteReward} />}
+      </div>
+    </div>
+  );
+}
+
+// Verify Tab - Pending claims
+function VerifyTab() {
+  return (
+    <div>
+      <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px', color: COLORS.textPrimary }}>
+        Pending Claims
+      </h2>
+      <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+        <div style={{ fontSize: '64px', marginBottom: '16px' }}>✓</div>
+        <p style={{ fontSize: '16px', color: COLORS.textSecondary }}>
+          No pending claims to verify
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Inbox Tab - Pending redemptions
+function InboxTab() {
+  return (
+    <div>
+      <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px', color: COLORS.textPrimary }}>
+        Pending Deliveries
+      </h2>
+      <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+        <div style={{ fontSize: '64px', marginBottom: '16px' }}>📬</div>
+        <p style={{ fontSize: '16px', color: COLORS.textSecondary }}>
+          No pending reward deliveries
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// School Tab - Teacher management
+function SchoolTab() {
+  return (
+    <div>
+      <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px', color: COLORS.textPrimary }}>
+        School & Teachers
+      </h2>
+      <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+        <div style={{ fontSize: '64px', marginBottom: '16px' }}>🏫</div>
+        <p style={{ fontSize: '16px', color: COLORS.textSecondary }}>
+          Teacher management coming soon
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Tasks Tab - Task management
+function TasksTab({ tasks, onCreateTask, onUpdateTask, onDeleteTask }) {
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: '600', margin: 0, color: COLORS.textPrimary }}>
+          Manage Tasks
+        </h2>
         <button
-          onClick={() => setManagementTab('pending')}
+          onClick={() => setShowCreateForm(true)}
           style={{
-            flex: '1 0 auto',
-            padding: '12px 16px',
-            background: managementTab === 'pending' ? 'white' : 'transparent',
+            background: COLORS.primary,
+            color: 'white',
             border: 'none',
+            padding: '12px 24px',
             borderRadius: '8px',
             fontSize: '14px',
             fontWeight: '600',
-            color: managementTab === 'pending' ? COLORS.textPrimary : COLORS.textSecondary,
             cursor: 'pointer',
-            transition: 'all 0.2s',
-            boxShadow: managementTab === 'pending' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
-            whiteSpace: 'nowrap',
           }}
         >
-          ⏳ Pending ({pendingClaims.length + pendingRedemptions.length})
-        </button>
-        {isAdminParent && (
-          <>
-            <button
-              onClick={() => setManagementTab('tasks')}
-              style={{
-                flex: '1 0 auto',
-                padding: '12px 16px',
-                background: managementTab === 'tasks' ? 'white' : 'transparent',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: '600',
-                color: managementTab === 'tasks' ? COLORS.textPrimary : COLORS.textSecondary,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                boxShadow: managementTab === 'tasks' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              📋 Tasks
-            </button>
-            <button
-              onClick={() => setManagementTab('rewards')}
-              style={{
-                flex: '1 0 auto',
-                padding: '12px 16px',
-                background: managementTab === 'rewards' ? 'white' : 'transparent',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: '600',
-                color: managementTab === 'rewards' ? COLORS.textPrimary : COLORS.textSecondary,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                boxShadow: managementTab === 'rewards' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              🎁 Rewards
-            </button>
-          </>
-        )}
-        <button
-          onClick={() => setManagementTab('teachers')}
-          style={{
-            flex: '1 0 auto',
-            padding: '12px 16px',
-            background: managementTab === 'teachers' ? 'white' : 'transparent',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '14px',
-            fontWeight: '600',
-            color: managementTab === 'teachers' ? COLORS.textPrimary : COLORS.textSecondary,
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            boxShadow: managementTab === 'teachers' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          👩‍🏫 Teachers
+          + Task
         </button>
       </div>
 
-      {/* Tab Content */}
-      {managementTab === 'pending' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <PendingClaimsList
-            claims={pendingClaims}
-            onApprove={onApproveClaim}
-            onApproveExtra={onApproveClaimExtra}
-            onRequestRedo={onRequestRedo}
-          />
-          <PendingRedemptionsList
-            redemptions={pendingRedemptions}
-            onMarkDelivered={onMarkDelivered}
-          />
+      {showCreateForm && (
+        <TaskForm
+          onClose={() => setShowCreateForm(false)}
+          onSave={(taskData) => {
+            onCreateTask(taskData);
+            setShowCreateForm(false);
+          }}
+        />
+      )}
+
+      {tasks.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+          <div style={{ fontSize: '64px', marginBottom: '16px' }}>✏️</div>
+          <p style={{ fontSize: '16px', color: COLORS.textSecondary }}>
+            No tasks yet. Click "+ Task" to create one.
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {tasks.map(task => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              onEdit={() => setEditingTask(task)}
+              onDelete={() => onDeleteTask(task.id)}
+            />
+          ))}
         </div>
       )}
 
-      {managementTab === 'tasks' && isAdminParent && (
-        <TaskManagement
-          tasks={tasks}
-          onAddTask={onAddTask}
-          onEditTask={onEditTask}
-          onArchiveTask={onArchiveTask}
-        />
-      )}
-
-      {managementTab === 'rewards' && isAdminParent && (
-        <RewardManagement
-          rewards={rewards}
-          onAddReward={onAddReward}
-          onEditReward={onEditReward}
-          onRetireReward={onRetireReward}
-        />
-      )}
-
-      {managementTab === 'teachers' && (
-        <TeacherStatusList
-          teachers={teachers}
-          reportsToday={teacherReportsToday}
-          today={today}
+      {editingTask && (
+        <TaskForm
+          task={editingTask}
+          onClose={() => setEditingTask(null)}
+          onSave={(taskData) => {
+            onUpdateTask(editingTask.id, taskData);
+            setEditingTask(null);
+          }}
         />
       )}
     </div>
   );
+}
 
-  // Read-Only Child View
-  const renderChildView = () => {
-    if (!selectedChild) return null;
-
-    return (
-      <div style={{ width: '100%', maxWidth: 800, margin: '0 auto', padding: '20px' }}>
-        {/* Back Button */}
-        <Button
-          variant="outline"
-          onClick={() => setCurrentView('management')}
-          style={{ marginBottom: '20px' }}
-        >
-          ← Back to Management
-        </Button>
-
-        {/* Child Name Header */}
-        <div style={{ marginBottom: '20px' }}>
-          <h2 style={{ 
-            fontSize: '24px', 
-            fontWeight: '700', 
-            color: COLORS.textPrimary,
-            marginBottom: '4px',
-          }}>
-            {selectedChild.name}'s Dashboard
-          </h2>
-          <p style={{ fontSize: '14px', color: COLORS.textSecondary }}>
-            Read-only view • You cannot interact with tasks or rewards
-          </p>
-        </div>
-
-        {/* Child Dashboard in Read-Only Mode */}
-        <ChildDashboard
-          tasks={selectedChild.tasks || []}
-          onSubmitTask={() => {}}
-          points={selectedChild.points || 0}
-          goal={selectedChild.goal || 20}
-          streak={selectedChild.streak || 0}
-          bonusAwarded={selectedChild.bonusAwarded || false}
-          rewards={selectedChild.rewards || []}
-          onRedeemReward={() => {}}
-          latestTeacherReport={selectedChild.latestTeacherReport}
-          readOnly={true}
-        />
+// Task Card Component
+function TaskCard({ task, onEdit, onDelete }) {
+  return (
+    <Card style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <div style={{ fontSize: '32px' }}>{task.icon || '📋'}</div>
+      <div style={{ flex: 1 }}>
+        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: COLORS.textPrimary }}>
+          {task.title}
+        </h3>
+        <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: COLORS.textSecondary }}>
+          {task.pointsDone} pt{task.pointsExtraWellDone > 0 && ` (+${task.pointsExtraWellDone} extra)`}
+        </p>
       </div>
-    );
+      <button
+        onClick={onEdit}
+        style={{
+          background: COLORS.backgroundLight,
+          color: COLORS.primary,
+          border: `1px solid ${COLORS.primary}`,
+          padding: '8px 16px',
+          borderRadius: '6px',
+          fontSize: '14px',
+          fontWeight: '600',
+          cursor: 'pointer',
+        }}
+      >
+        ✏️ Edit
+      </button>
+      <button
+        onClick={onDelete}
+        style={{
+          background: 'white',
+          color: COLORS.textSecondary,
+          border: `1px solid ${COLORS.borderLight}`,
+          padding: '8px 16px',
+          borderRadius: '6px',
+          fontSize: '14px',
+          cursor: 'pointer',
+        }}
+      >
+        🗑️
+      </button>
+    </Card>
+  );
+}
+
+// Task Form Component (Create/Edit)
+function TaskForm({ task, onClose, onSave }) {
+  const [formData, setFormData] = useState({
+    title: task?.title || '',
+    icon: task?.icon || '📋',
+    doneStandard: task?.doneStandard || '',
+    extraWellDoneStandard: task?.extraWellDoneStandard || '',
+    tips: task?.tips || [],
+    pointsDone: task?.pointsDone || 1,
+    pointsExtraWellDone: task?.pointsExtraWellDone || 0,
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
   };
 
-  return currentView === 'management' ? renderManagementPanel() : renderChildView();
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
+      padding: '20px',
+    }}>
+      <Card style={{
+        maxWidth: '600px',
+        width: '100%',
+        maxHeight: '90vh',
+        overflow: 'auto',
+        padding: '24px',
+      }}>
+        <h2 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: '600', color: COLORS.textPrimary }}>
+          {task ? 'Edit Task' : 'Create a New Task'}
+        </h2>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <Input
+            label="Task Name"
+            type="text"
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            placeholder="e.g. Vacuum living room"
+            required
+          />
+
+          <Input
+            label="Completion Criteria"
+            type="textarea"
+            value={formData.doneStandard}
+            onChange={(e) => setFormData({ ...formData, doneStandard: e.target.value })}
+            placeholder="e.g. All furniture moved, corners done"
+            required
+          />
+
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: COLORS.textPrimary }}>
+                Points Value
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="10"
+                value={formData.pointsDone}
+                onChange={(e) => setFormData({ ...formData, pointsDone: parseInt(e.target.value) })}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: `2px solid ${COLORS.borderLight}`,
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+            <button
+              type="submit"
+              style={{
+                flex: 1,
+                background: COLORS.primary,
+                color: 'white',
+                border: 'none',
+                padding: '14px',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: 'pointer',
+              }}
+            >
+              {task ? 'Save Changes' : 'Add Task'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                flex: 1,
+                background: 'white',
+                color: COLORS.textSecondary,
+                border: `2px solid ${COLORS.borderLight}`,
+                padding: '14px',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Card>
+    </div>
+  );
+}
+
+// Rewards Tab - Reward management
+function RewardsTab({ rewards, onCreateReward, onUpdateReward, onDeleteReward }) {
+  const [showCreateForm, setShowCreateForm] = useState(false);
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: '600', margin: 0, color: COLORS.textPrimary }}>
+          Manage Rewards
+        </h2>
+        <button
+          onClick={() => setShowCreateForm(true)}
+          style={{
+            background: COLORS.primary,
+            color: 'white',
+            border: 'none',
+            padding: '12px 24px',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontWeight: '600',
+            cursor: 'pointer',
+          }}
+        >
+          + Reward
+        </button>
+      </div>
+
+      {rewards.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+          <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎁</div>
+          <p style={{ fontSize: '16px', color: COLORS.textSecondary }}>
+            No rewards yet. Click "+ Reward" to create one.
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
+          {rewards.map(reward => (
+            <RewardCard key={reward.id} reward={reward} />
+          ))}
+        </div>
+      )}
+
+      {showCreateForm && (
+        <RewardForm
+          onClose={() => setShowCreateForm(false)}
+          onSave={(rewardData) => {
+            onCreateReward(rewardData);
+            setShowCreateForm(false);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// Reward Card Component
+function RewardCard({ reward }) {
+  return (
+    <Card style={{ padding: '16px', textAlign: 'center' }}>
+      <div style={{ fontSize: '48px', marginBottom: '8px' }}>{reward.icon || '🎁'}</div>
+      <h3 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: '600', color: COLORS.textPrimary }}>
+        {reward.title}
+      </h3>
+      <div style={{ fontSize: '16px', fontWeight: '700', color: COLORS.primary }}>
+        {reward.pointsCost} pts
+      </div>
+    </Card>
+  );
+}
+
+// Reward Form Component
+function RewardForm({ onClose, onSave }) {
+  const [formData, setFormData] = useState({
+    title: '',
+    icon: '🎁',
+    pointsCost: 10,
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
+      padding: '20px',
+    }}>
+      <Card style={{
+        maxWidth: '500px',
+        width: '100%',
+        padding: '24px',
+      }}>
+        <h2 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: '600', color: COLORS.textPrimary }}>
+          Create a New Reward
+        </h2>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <Input
+            label="Reward Name"
+            type="text"
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            placeholder="e.g. Trip to the movies"
+            required
+          />
+
+          <div>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: COLORS.textPrimary }}>
+              Points Cost
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={formData.pointsCost}
+              onChange={(e) => setFormData({ ...formData, pointsCost: parseInt(e.target.value) })}
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: `2px solid ${COLORS.borderLight}`,
+                borderRadius: '8px',
+                fontSize: '16px',
+                boxSizing: 'border-box',
+              }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+            <button
+              type="submit"
+              style={{
+                flex: 1,
+                background: COLORS.primary,
+                color: 'white',
+                border: 'none',
+                padding: '14px',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: 'pointer',
+              }}
+            >
+              Add Reward
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                flex: 1,
+                background: 'white',
+                color: COLORS.textSecondary,
+                border: `2px solid ${COLORS.borderLight}`,
+                padding: '14px',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Card>
+    </div>
+  );
 }
