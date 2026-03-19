@@ -19,6 +19,13 @@ export class LibraryService {
   }
 
   /**
+   * Browse library tasks (alias for getAllLibraryTasks)
+   */
+  static async browseTasks(category?: string) {
+    return this.getAllLibraryTasks(category);
+  }
+
+  /**
    * Get library task by ID
    */
   static async getLibraryTaskById(taskId: string) {
@@ -31,6 +38,13 @@ export class LibraryService {
     }
 
     return task;
+  }
+
+  /**
+   * Get task by ID (alias for getLibraryTaskById)
+   */
+  static async getTaskById(taskId: string) {
+    return this.getLibraryTaskById(taskId);
   }
 
   /**

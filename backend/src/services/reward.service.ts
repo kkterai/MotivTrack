@@ -393,4 +393,40 @@ export class RewardService {
       meetsTarget: averageDays <= 7, // PRD target
     };
   }
+
+  /**
+   * Get pending redemptions for a parent
+   */
+  static async getPendingRedemptions(parentId: string) {
+    // Get all child profiles where this user is admin or delivery parent
+    const childProfiles = await prisma.childProfile.findMany({
+      where: {
+        OR: [
+          { adminParentId: parentId },
+          { deliveryParentId: parentId },
+        ],
+      },
+    });
+
+    const childProfileIds = childProfiles.map((cp: any) => cp.id);
+
+    return await prisma.rewardRedemption.findMany({
+      where: {
+        childProfileId: { in: childProfileIds },
+        deliveredAt: null, // Not yet delivered
+      },
+      include: {
+        reward: true,
+        childProfile: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        redeemedAt: 'asc',
+      },
+    });
+  }
 }

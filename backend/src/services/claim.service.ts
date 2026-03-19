@@ -327,4 +327,82 @@ export class ClaimService {
 
     return claim;
   }
+
+  /**
+   * Get all claims for a child (with optional status filter)
+   */
+  static async getClaimsByChild(
+    childProfileId: string,
+    status?: 'pending' | 'verified' | 'redo_requested'
+  ) {
+    const where: any = { childProfileId };
+    
+    if (status) {
+      where.status = status;
+    }
+
+    return await prisma.taskClaim.findMany({
+      where,
+      include: {
+        task: true,
+        child: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        verifier: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  /**
+   * Get pending claims for a parent to review
+   */
+  static async getPendingClaimsForParent(parentId: string) {
+    // Get all child profiles where this user is admin or delivery parent
+    const childProfiles = await prisma.childProfile.findMany({
+      where: {
+        OR: [
+          { adminParentId: parentId },
+          { deliveryParentId: parentId },
+        ],
+      },
+    });
+
+    const childProfileIds = childProfiles.map(cp => cp.id);
+
+    return await prisma.taskClaim.findMany({
+      where: {
+        childProfileId: { in: childProfileIds },
+        status: 'pending',
+      },
+      include: {
+        task: true,
+        child: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        childProfile: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+  }
 }

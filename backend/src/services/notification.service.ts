@@ -245,4 +245,23 @@ export class NotificationService {
       },
     });
   }
+
+  /**
+   * Get notifications for a user
+   */
+  static async getNotificationsForUser(userId: string, limit = 50, unreadOnly = false) {
+    const where: any = { userId };
+    
+    if (unreadOnly) {
+      where.openedAt = null;
+    }
+
+    return await prisma.notificationLog.findMany({
+      where,
+      orderBy: {
+        sentAt: 'desc',
+      },
+      take: limit,
+    });
+  }
 }

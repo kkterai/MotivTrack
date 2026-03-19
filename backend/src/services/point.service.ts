@@ -53,6 +53,13 @@ export class PointService {
   }
 
   /**
+   * Get point balance (alias for getTotalPoints for API clarity)
+   */
+  static async getPointBalance(childProfileId: string): Promise<number> {
+    return this.getTotalPoints(childProfileId);
+  }
+
+  /**
    * Get point transaction history
    */
   static async getPointHistory(childProfileId: string, limit = 50) {
