@@ -9,7 +9,7 @@ export class InvitationController {
    */
   static async createInvitation(req: AuthRequest, res: Response) {
     try {
-      const { email, role, childProfileId } = req.body;
+      const { email, role, childProfileId, childName } = req.body;
       const invitedBy = req.user!.id;
 
       const invitation = await InvitationService.createInvitation({
@@ -19,9 +19,23 @@ export class InvitationController {
         childProfileId,
       });
 
+      // Generate formatted email text for parent to send
+      let emailText = null;
+      if (role === 'child' && childName) {
+        const parentName = req.user!.name || 'Your parent';
+        emailText = InvitationService.generateInvitationEmailText(
+          childName,
+          parentName,
+          invitation.token
+        );
+      }
+
       res.status(201).json({
         success: true,
-        data: invitation,
+        data: {
+          invitation,
+          emailText,
+        },
       });
     } catch (error: any) {
       res.status(400).json({

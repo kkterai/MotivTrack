@@ -12,6 +12,13 @@ const router = Router();
 router.post('/register', AuthController.register);
 
 /**
+ * @route   POST /api/auth/register-child
+ * @desc    Register child account via invitation token
+ * @access  Public
+ */
+router.post('/register-child', AuthController.registerChild);
+
+/**
  * @route   POST /api/auth/login
  * @desc    Login user
  * @access  Public

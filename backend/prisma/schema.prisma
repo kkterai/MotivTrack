@@ -76,13 +76,17 @@ enum NotificationStatus {
 // ============================================================================
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String
-  role         Role
-  name         String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                    String    @id @default(uuid())
+  email                 String    @unique
+  passwordHash          String
+  role                  Role
+  name                  String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  // Legal Compliance
+  tosAcceptedAt         DateTime?
+  privacyPolicyAcceptedAt DateTime?
 
   // Relations
   childProfilesAsAdmin     ChildProfile[]     @relation("AdminParent")
@@ -107,6 +111,9 @@ model ChildProfile {
   isArchived   Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  
+  // Legal Compliance (COPPA)
+  coppaConsentGivenAt DateTime?
 
   // Parent relationships
   adminParentId    String

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../../services/auth.service';
+import { InvitationService } from '../../services/invitation.service';
 
 export class AuthController {
   /**
@@ -88,6 +89,64 @@ export class AuthController {
       res.status(200).json({
         success: true,
         message: 'Password updated successfully',
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * Register child account via invitation token
+   * POST /api/auth/register-child
+   */
+  static async registerChild(req: Request, res: Response) {
+    try {
+      const { token, password, name } = req.body;
+
+      if (!token || !password) {
+        return res.status(400).json({
+          success: false,
+          error: 'Token and password are required',
+        });
+      }
+
+      // Validate the invitation token
+      const invitation = await InvitationService.validateToken(token);
+
+      if (invitation.role !== 'child') {
+        return res.status(400).json({
+          success: false,
+          error: 'This invitation is not for a child account',
+        });
+      }
+
+      if (!invitation.childProfileId) {
+        return res.status(400).json({
+          success: false,
+          error: 'No child profile associated with this invitation',
+        });
+      }
+
+      // Register the child user
+      const result = await AuthService.register(
+        invitation.email,
+        password,
+        'child',
+        name || invitation.childProfile?.name
+      );
+
+      // Mark invitation as accepted
+      await InvitationService.acceptInvitation(token, result.user.id);
+
+      // TODO: Link the user to the child profile
+      // This will be done in a future update to the ChildProfile model
+
+      res.status(201).json({
+        success: true,
+        data: result,
       });
     } catch (error: any) {
       res.status(400).json({

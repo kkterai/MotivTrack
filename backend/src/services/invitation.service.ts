@@ -68,6 +68,37 @@ export class InvitationService {
   }
 
   /**
+   * Generate formatted email text for parent to send to child
+   */
+  static generateInvitationEmailText(
+    childName: string,
+    parentName: string,
+    token: string,
+    appUrl: string = process.env.FRONTEND_URL || 'http://localhost:5173'
+  ): string {
+    const registrationLink = `${appUrl}/claim-account?token=${token}`;
+    
+    return `Hi ${childName}!
+
+Your parent, ${parentName}, has set up MotivTrack for you! 🎉
+
+MotivTrack helps you earn points by completing tasks and redeem them for rewards you choose. Your parent has already set up some tasks and rewards for you to get started.
+
+Click the link below to create your account and start earning:
+
+${registrationLink}
+
+Once you're in, you'll be able to:
+✅ See your tasks and claim them when you complete them
+🎁 Choose rewards you want to earn
+📊 Track your progress and points
+🔥 Build streaks for bonus points!
+
+See you inside!
+- The MotivTrack Team`;
+  }
+
+  /**
    * Validate an invitation token
    */
   static async validateToken(token: string) {
