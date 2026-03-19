@@ -27,34 +27,34 @@ export default function Button({
 
   const variants = {
     primary: {
-      background: COLORS.purpleGradient,
+      background: COLORS.gradient,
       color: 'white',
-      boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
+      boxShadow: '0 4px 12px rgba(20, 103, 53, 0.4)',
     },
     secondary: {
-      background: COLORS.greenGradient,
+      background: COLORS.accent,
       color: 'white',
-      boxShadow: '0 4px 12px rgba(132, 250, 176, 0.4)',
+      boxShadow: '0 4px 12px rgba(87, 187, 138, 0.4)',
     },
     success: {
-      background: COLORS.greenGradient,
+      background: COLORS.primary,
       color: 'white',
-      boxShadow: '0 4px 12px rgba(132, 250, 176, 0.4)',
+      boxShadow: '0 4px 12px rgba(37, 166, 103, 0.4)',
     },
     warning: {
-      background: COLORS.yellowGradient,
-      color: '#333',
-      boxShadow: '0 4px 12px rgba(255, 234, 167, 0.4)',
+      background: COLORS.highlight,
+      color: COLORS.textPrimary,
+      boxShadow: '0 4px 12px rgba(246, 187, 24, 0.4)',
     },
     danger: {
-      background: COLORS.redGradient,
+      background: COLORS.error,
       color: 'white',
-      boxShadow: '0 4px 12px rgba(255, 107, 107, 0.4)',
+      boxShadow: '0 4px 12px rgba(217, 48, 37, 0.4)',
     },
     outline: {
       background: 'transparent',
-      color: COLORS.purple,
-      border: `2px solid ${COLORS.purple}`,
+      color: COLORS.primary,
+      border: `2px solid ${COLORS.primary}`,
       boxShadow: 'none',
     },
   };

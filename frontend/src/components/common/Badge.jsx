@@ -11,35 +11,35 @@ export default function Badge({
 }) {
   const variants = {
     default: {
-      background: COLORS.gray,
-      color: COLORS.grayDark,
+      background: COLORS.background,
+      color: COLORS.textSecondary,
     },
     primary: {
-      background: COLORS.purple,
+      background: COLORS.primary,
       color: 'white',
     },
     success: {
-      background: COLORS.green,
+      background: COLORS.primary,
       color: 'white',
     },
     warning: {
-      background: COLORS.yellow,
-      color: '#333',
+      background: COLORS.highlight,
+      color: COLORS.textPrimary,
     },
     danger: {
-      background: COLORS.red,
+      background: COLORS.error,
       color: 'white',
     },
     pending: {
-      background: COLORS.yellow,
-      color: '#333',
+      background: COLORS.highlight,
+      color: COLORS.textPrimary,
     },
     verified: {
-      background: COLORS.green,
+      background: COLORS.primary,
       color: 'white',
     },
     redo: {
-      background: COLORS.red,
+      background: COLORS.error,
       color: 'white',
     },
   };

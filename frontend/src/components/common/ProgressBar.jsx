@@ -4,10 +4,10 @@ import { COLORS } from '../../utils/constants';
  * Animated Progress Bar component
  * Preserves exact styling from original App.jsx
  */
-export default function ProgressBar({ 
-  current, 
-  max, 
-  color = COLORS.purpleGradient,
+export default function ProgressBar({
+  current,
+  max,
+  color = COLORS.gradient,
   height = 24,
   showLabel = true,
   animated = true,
@@ -20,7 +20,7 @@ export default function ProgressBar({
         style={{
           width: '100%',
           height: `${height}px`,
-          background: COLORS.gray,
+          background: COLORS.background,
           borderRadius: '12px',
           overflow: 'hidden',
           position: 'relative',
@@ -57,7 +57,7 @@ export default function ProgressBar({
           style={{
             marginTop: '4px',
             fontSize: '12px',
-            color: COLORS.grayDark,
+            color: COLORS.textSecondary,
             textAlign: 'right',
           }}
         >

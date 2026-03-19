@@ -1,28 +1,26 @@
 // API Configuration
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
-// Color Palette (Preserve Exactly from Original)
+// Color Palette (from UI_UX_SPEC.md - Google Classroom + Joyful Holly)
 export const COLORS = {
-  // Gradients
-  purpleGradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-  greenGradient: 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
-  yellowGradient: 'linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%)',
-  redGradient: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)',
-  
-  // Solid colors
-  purple: '#667eea',
-  purpleDark: '#764ba2',
-  green: '#84fab0',
-  greenLight: '#8fd3f4',
-  yellow: '#ffeaa7',
-  yellowDark: '#fdcb6e',
-  red: '#ff6b6b',
-  redDark: '#ee5a6f',
-  gray: '#f3f4f6',
-  grayMedium: '#9ca3af',
-  grayDark: '#6b7280',
+  // Joyful Holly Gradient
+  gradient: 'linear-gradient(to right, #146735, #EAFDD8)',
+
+  // Google Classroom official brand colors
+  primary: '#25A667',        // Classroom green
+  accent: '#57BB8A',         // Secondary Classroom green
+  highlight: '#F6BB18',      // Classroom yellow
+
+  // UI neutrals / support colors
+  textPrimary: '#202124',
+  textSecondary: '#5f6368',
+  background: '#f8f9fa',
+  error: '#d93025',
   white: '#ffffff',
-  black: '#000000',
+  
+  // Legacy aliases for backward compatibility (will be removed)
+  gray: '#f8f9fa',
+  grayDark: '#5f6368',
 };
 
 // User Roles
