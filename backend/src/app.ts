@@ -5,16 +5,14 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
-// Import routes (will be created)
-// import authRoutes from './api/routes/auth.routes.js';
-// import taskRoutes from './api/routes/tasks.routes.js';
-// import claimRoutes from './api/routes/claims.routes.js';
-// import pointRoutes from './api/routes/points.routes.js';
-// import rewardRoutes from './api/routes/rewards.routes.js';
-// import libraryRoutes from './api/routes/library.routes.js';
-// import teacherRoutes from './api/routes/teachers.routes.js';
-// import behaviorRoutes from './api/routes/behavior.routes.js';
-// import notificationRoutes from './api/routes/notifications.routes.js';
+// Import routes
+import authRoutes from './api/routes/auth.routes.js';
+import taskRoutes from './api/routes/task.routes.js';
+import claimRoutes from './api/routes/claim.routes.js';
+import pointRoutes from './api/routes/point.routes.js';
+import rewardRoutes from './api/routes/reward.routes.js';
+import libraryRoutes from './api/routes/library.routes.js';
+import notificationRoutes from './api/routes/notification.routes.js';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3001;
@@ -54,16 +52,14 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
-// API routes (will be uncommented as they are created)
-// app.use('/api/auth', authRoutes);
-// app.use('/api/tasks', taskRoutes);
-// app.use('/api/claims', claimRoutes);
-// app.use('/api/points', pointRoutes);
-// app.use('/api/rewards', rewardRoutes);
-// app.use('/api/library', libraryRoutes);
-// app.use('/api/teachers', teacherRoutes);
-// app.use('/api/behavior', behaviorRoutes);
-// app.use('/api/notifications', notificationRoutes);
+// API routes
+app.use('/api/auth', authRoutes);
+app.use('/api/tasks', taskRoutes);
+app.use('/api/claims', claimRoutes);
+app.use('/api/points', pointRoutes);
+app.use('/api/rewards', rewardRoutes);
+app.use('/api/library', libraryRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // ============================================================================
 // ERROR HANDLING
