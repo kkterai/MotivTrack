@@ -34,6 +34,9 @@ export class ChildProfileService {
       welcomeBonusPoints = 0,
     } = data;
 
+    console.log('[ChildProfileService.createChildProfile] Input data:', data);
+    console.log('[ChildProfileService.createChildProfile] adminParentId:', adminParentId);
+
     // Create child profile
     const childProfile = await prisma.childProfile.create({
       data: {
@@ -54,12 +57,18 @@ export class ChildProfileService {
       },
     });
 
+    console.log('[ChildProfileService.createChildProfile] Created child profile:', childProfile);
+    console.log('[ChildProfileService.createChildProfile] Child profile ID:', childProfile.id);
+    console.log('[ChildProfileService.createChildProfile] Admin parent ID:', childProfile.adminParentId);
+
     // Award welcome bonus points if specified
     if (welcomeBonusPoints > 0) {
+      console.log('[ChildProfileService.createChildProfile] Awarding welcome bonus:', welcomeBonusPoints);
       await PointService.awardWelcomeBonus(childProfile.id, welcomeBonusPoints);
     }
 
     // Create initial streak record
+    console.log('[ChildProfileService.createChildProfile] Creating streak record');
     await prisma.streakRecord.create({
       data: {
         childProfileId: childProfile.id,
@@ -70,6 +79,7 @@ export class ChildProfileService {
       },
     });
 
+    console.log('[ChildProfileService.createChildProfile] Returning child profile:', childProfile);
     return childProfile;
   }
 

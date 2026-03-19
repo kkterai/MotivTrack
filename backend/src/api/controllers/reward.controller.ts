@@ -9,14 +9,14 @@ export class RewardController {
   static async createReward(req: Request, res: Response) {
     try {
       const userId = (req as any).user.id;
-      const { childProfileId, title, description, pointCost } = req.body;
+      const { childProfileId, title, description, pointsCost } = req.body;
 
       console.log('[RewardController.createReward] Request:', {
         userId,
         childProfileId,
         title,
         description,
-        pointCost,
+        pointsCost,
       });
 
       const reward = await RewardService.createReward(
@@ -24,7 +24,7 @@ export class RewardController {
           childProfileId,
           title,
           description,
-          pointCost,
+          pointsCost,
         },
         userId
       );

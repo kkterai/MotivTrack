@@ -89,13 +89,13 @@ export interface CreateRewardDTO {
   childProfileId: string;
   title: string;
   description: string;
-  pointCost: number;
+  pointsCost: number;
 }
 
 export interface UpdateRewardDTO {
   title?: string;
   description?: string;
-  pointCost?: number;
+  pointsCost?: number;
   isActive?: boolean;
   isRetired?: boolean;
 }

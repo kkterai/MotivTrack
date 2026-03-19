@@ -12,6 +12,10 @@ export class ChildProfileController {
       const { name, grade, age, schoolName, schoolDomain, welcomeBonusPoints } = req.body;
       const adminParentId = req.user!.id;
 
+      console.log('[ChildProfileController.createChildProfile] Request body:', req.body);
+      console.log('[ChildProfileController.createChildProfile] req.user:', req.user);
+      console.log('[ChildProfileController.createChildProfile] adminParentId:', adminParentId);
+
       const childProfile = await ChildProfileService.createChildProfile({
         name,
         grade,
@@ -22,11 +26,18 @@ export class ChildProfileController {
         welcomeBonusPoints,
       });
 
+      console.log('[ChildProfileController.createChildProfile] Created child profile:', childProfile);
+      console.log('[ChildProfileController.createChildProfile] Returning data:', {
+        success: true,
+        data: childProfile,
+      });
+
       res.status(201).json({
         success: true,
         data: childProfile,
       });
     } catch (error: any) {
+      console.error('[ChildProfileController.createChildProfile] Error:', error);
       res.status(400).json({
         success: false,
         error: error.message,

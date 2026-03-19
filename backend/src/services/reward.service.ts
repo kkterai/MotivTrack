@@ -27,7 +27,7 @@ export class RewardService {
         childProfileId: data.childProfileId,
         title: data.title,
         description: data.description,
-        pointCost: data.pointCost,
+        pointsCost: data.pointsCost,
         createdBy,
       },
       include: {
@@ -108,7 +108,7 @@ export class RewardService {
       data: {
         title: data.title,
         description: data.description,
-        pointCost: data.pointCost,
+        pointsCost: data.pointsCost,
         isActive: data.isActive,
         isRetired: data.isRetired,
       },
@@ -156,12 +156,12 @@ export class RewardService {
     // Verify child has enough points
     const totalPoints = await PointService.getTotalPoints(reward.childProfileId);
 
-    if (totalPoints < reward.pointCost) {
-      throw new Error(`Insufficient points. Need ${reward.pointCost}, have ${totalPoints}`);
+    if (totalPoints < reward.pointsCost) {
+      throw new Error(`Insufficient points. Need ${reward.pointsCost}, have ${totalPoints}`);
     }
 
     // Deduct points
-    await PointService.deductPoints(reward.childProfileId, reward.pointCost, `Redeemed: ${reward.title}`);
+    await PointService.deductPoints(reward.childProfileId, reward.pointsCost, `Redeemed: ${reward.title}`);
 
     // Create redemption record
     const redemption = await prisma.rewardRedemption.create({
@@ -188,14 +188,14 @@ export class RewardService {
       type: 'reward_redeemed',
       payload: {
         title: `${reward.childProfile.name} earned a reward!`,
-        body: `${reward.title} - ${reward.pointCost} points. Mark as delivered when complete.`,
+        body: `${reward.title} - ${reward.pointsCost} points. Mark as delivered when complete.`,
         actionUrl: `/parent/rewards/${redemption.id}`,
         metadata: {
           redemptionId: redemption.id,
           rewardId: reward.id,
           rewardTitle: reward.title,
           childName: reward.childProfile.name,
-          pointCost: reward.pointCost,
+          pointsCost: reward.pointsCost,
         },
       },
     });
@@ -207,14 +207,14 @@ export class RewardService {
         type: 'reward_redeemed',
         payload: {
           title: `${reward.childProfile.name} earned a reward!`,
-          body: `${reward.title} - ${reward.pointCost} points. Mark as delivered when complete.`,
+          body: `${reward.title} - ${reward.pointsCost} points. Mark as delivered when complete.`,
           actionUrl: `/parent/rewards/${redemption.id}`,
           metadata: {
             redemptionId: redemption.id,
             rewardId: reward.id,
             rewardTitle: reward.title,
             childName: reward.childProfile.name,
-            pointCost: reward.pointCost,
+            pointsCost: reward.pointsCost,
           },
         },
       });
@@ -288,7 +288,7 @@ export class RewardService {
             id: true,
             title: true,
             description: true,
-            pointCost: true,
+            pointsCost: true,
           },
         },
       },
