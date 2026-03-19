@@ -13,6 +13,7 @@ import pointRoutes from './api/routes/point.routes.js';
 import rewardRoutes from './api/routes/reward.routes.js';
 import libraryRoutes from './api/routes/library.routes.js';
 import notificationRoutes from './api/routes/notification.routes.js';
+import seedRoutes from './api/routes/seed.routes.js';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3001;
@@ -60,6 +61,7 @@ app.use('/api/points', pointRoutes);
 app.use('/api/rewards', rewardRoutes);
 app.use('/api/library', libraryRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/seed', seedRoutes);
 
 // ============================================================================
 // ERROR HANDLING

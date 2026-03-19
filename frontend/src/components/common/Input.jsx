@@ -27,6 +27,7 @@ export default function Input({
     fontFamily: 'inherit',
     backgroundColor: disabled ? COLORS.gray : 'white',
     cursor: disabled ? 'not-allowed' : 'text',
+    boxSizing: 'border-box',
   };
 
   const focusStyles = {

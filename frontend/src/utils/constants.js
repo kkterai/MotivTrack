@@ -68,10 +68,10 @@ export const NOTIFICATION_TYPES = {
 
 // Behavior Rating Scale
 export const BEHAVIOR_SCALE = [
-  { value: 1, label: 'Needs Support', emoji: '😟', color: COLORS.red },
-  { value: 2, label: 'Developing', emoji: '😐', color: COLORS.yellow },
-  { value: 3, label: 'Meeting', emoji: '🙂', color: COLORS.green },
-  { value: 4, label: 'Exceeding', emoji: '🌟', color: COLORS.purple },
+  { value: 1, label: 'Needs Support', emoji: '😟', color: COLORS.error },
+  { value: 2, label: 'Developing', emoji: '😐', color: COLORS.highlight },
+  { value: 3, label: 'Meeting', emoji: '🙂', color: COLORS.accent },
+  { value: 4, label: 'Exceeding', emoji: '🌟', color: COLORS.primary },
 ];
 
 // Streak Milestones (for bonus points)

@@ -153,6 +153,7 @@ export default function Login({ onLogin, onRegister, loading = false, error = nu
                     color: COLORS.textPrimary,
                     background: 'white',
                     cursor: loading ? 'not-allowed' : 'pointer',
+                    boxSizing: 'border-box',
                   }}
                 >
                   <option value="admin_parent">Parent (Full Access)</option>

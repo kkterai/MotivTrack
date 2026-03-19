@@ -150,6 +150,7 @@ model Task {
   id                    String       @id @default(uuid())
   childProfileId        String
   title                 String
+  icon                  String?
   doneStandard          String       @db.Text
   extraWellDoneStandard String       @db.Text
   tips                  String       @db.Text
@@ -158,6 +159,7 @@ model Task {
   isFromLibrary         Boolean      @default(false)
   libraryTaskId         String?
   isArchived            Boolean      @default(false)
+  createdBy             String?
   createdAt             DateTime     @default(now())
   updatedAt             DateTime     @updatedAt
 
@@ -226,15 +228,19 @@ model PointTransaction {
 // ============================================================================
 
 model Reward {
-  id             String   @id @default(uuid())
-  childProfileId String
-  title          String
-  description    String   @db.Text
-  pointCost      Int
-  isActive       Boolean  @default(true)
-  isRetired      Boolean  @default(false)
-  createdAt      DateTime @default(now())
-  createdBy      String?
+  id              String   @id @default(uuid())
+  childProfileId  String
+  title           String
+  description     String?  @db.Text
+  icon            String?
+  pointsCost      Int
+  category        String?
+  needsScheduling Boolean  @default(false)
+  shoppingLink    String?
+  isActive        Boolean  @default(true)
+  isRetired       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  createdBy       String?
 
   // Relations
   childProfile      ChildProfile       @relation(fields: [childProfileId], references: [id])
