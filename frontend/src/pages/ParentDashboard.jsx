@@ -38,7 +38,8 @@ export default function ParentDashboard() {
         const profilesResponse = await childProfileService.getMyChildProfiles();
         console.log('[ParentDashboard] Child profiles response:', profilesResponse);
         
-        const profiles = profilesResponse.data || [];
+        // The service already unwraps response.data, so profilesResponse is the array
+        const profiles = profilesResponse || [];
         console.log('[ParentDashboard] Parsed profiles:', profiles, 'count:', profiles.length);
         
         // If admin parent has no child profiles, redirect to onboarding
@@ -71,6 +72,61 @@ export default function ParentDashboard() {
 
     loadData();
   }, [user, navigate, fetchNotifications]);
+
+  // Fetch tasks and rewards when selected child changes
+  useEffect(() => {
+    const loadChildData = async () => {
+      if (!selectedChild) return;
+      
+      try {
+        console.log('[ParentDashboard] Fetching tasks and rewards for child:', selectedChild);
+        await Promise.all([
+          fetchTasks(selectedChild),
+          fetchRewards(selectedChild)
+        ]);
+        console.log('[ParentDashboard] Tasks and rewards loaded successfully');
+      } catch (error) {
+        console.error('[ParentDashboard] Error loading child data:', error);
+      }
+    };
+
+    loadChildData();
+  }, [selectedChild, fetchTasks, fetchRewards]);
+
+  // Wrapper functions to inject selectedChild into task/reward operations
+  const handleCreateTask = async (taskData) => {
+    if (!selectedChild) {
+      console.error('[ParentDashboard] No child selected');
+      return;
+    }
+    return createTask({ ...taskData, childProfileId: selectedChild });
+  };
+
+  const handleUpdateTask = async (taskId, taskData) => {
+    return updateTask(taskId, taskData);
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    // Note: deleteTask is not in the store, so we'll need to handle this differently
+    console.warn('[ParentDashboard] Delete task not implemented yet');
+  };
+
+  const handleCreateReward = async (rewardData) => {
+    if (!selectedChild) {
+      console.error('[ParentDashboard] No child selected');
+      return;
+    }
+    return createReward({ ...rewardData, childProfileId: selectedChild });
+  };
+
+  const handleUpdateReward = async (rewardId, rewardData) => {
+    return updateReward(rewardId, rewardData);
+  };
+
+  const handleDeleteReward = async (rewardId) => {
+    // Note: deleteReward is not in the store, so we'll need to handle this differently
+    console.warn('[ParentDashboard] Delete reward not implemented yet');
+  };
 
   if (loading) {
     return (
@@ -205,8 +261,8 @@ export default function ParentDashboard() {
         {activeTab === 'verify' && <VerifyTab />}
         {activeTab === 'inbox' && <InboxTab />}
         {activeTab === 'school' && <SchoolTab />}
-        {activeTab === 'tasks' && <TasksTab tasks={tasks} onCreateTask={createTask} onUpdateTask={updateTask} onDeleteTask={deleteTask} />}
-        {activeTab === 'rewards' && <RewardsTab rewards={rewards} onCreateReward={createReward} onUpdateReward={updateReward} onDeleteReward={deleteReward} />}
+        {activeTab === 'tasks' && <TasksTab tasks={tasks} onCreateTask={handleCreateTask} onUpdateTask={handleUpdateTask} onDeleteTask={handleDeleteTask} />}
+        {activeTab === 'rewards' && <RewardsTab rewards={rewards} onCreateReward={handleCreateReward} onUpdateReward={handleUpdateReward} onDeleteReward={handleDeleteReward} />}
       </div>
     </div>
   );

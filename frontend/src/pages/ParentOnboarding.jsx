@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { childProfileService } from '../services/childProfiles';
 import { invitationService } from '../services/invitations';
@@ -7,31 +7,84 @@ import { rewardService } from '../services/rewards';
 import { COLORS } from '../utils/constants';
 import { Button, Card, Input } from '../components/common';
 
+const STORAGE_KEY = 'motivtrack_onboarding_state';
+
 /**
  * ParentOnboarding - 7-step wizard for Admin Parent onboarding
  * Based on ONBOARDING_FLOW_SPEC.md
+ * Features: State persistence via localStorage
  */
 export default function ParentOnboarding() {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(1);
+  
+  // Load state from localStorage or use defaults
+  const loadState = () => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        console.log('[ParentOnboarding] Restored state from localStorage');
+        return JSON.parse(saved);
+      }
+    } catch (err) {
+      console.error('[ParentOnboarding] Failed to load state:', err);
+    }
+    return {
+      currentStep: 1,
+      childData: { name: '', grade: '', age: '', schoolName: '' },
+      childProfile: null,
+      welcomeBonus: 5,
+      rewards: [],
+      tasks: [],
+      childEmail: '',
+      deliveryParentEmail: '',
+    };
+  };
+
+  const initialState = loadState();
+  
+  const [currentStep, setCurrentStep] = useState(initialState.currentStep);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Wizard data
-  const [childData, setChildData] = useState({
-    name: '',
-    grade: '',
-    age: '',
-    schoolName: '',
-  });
-  const [childProfile, setChildProfile] = useState(null);
-  const [welcomeBonus, setWelcomeBonus] = useState(5);
-  const [rewards, setRewards] = useState([]);
-  const [tasks, setTasks] = useState([]);
-  const [childEmail, setChildEmail] = useState('');
-  const [deliveryParentEmail, setDeliveryParentEmail] = useState('');
+  // Wizard data - initialized from localStorage
+  const [childData, setChildData] = useState(initialState.childData);
+  const [childProfile, setChildProfile] = useState(initialState.childProfile);
+  const [welcomeBonus, setWelcomeBonus] = useState(initialState.welcomeBonus);
+  const [rewards, setRewards] = useState(initialState.rewards);
+  const [tasks, setTasks] = useState(initialState.tasks);
+  const [childEmail, setChildEmail] = useState(initialState.childEmail);
+  const [deliveryParentEmail, setDeliveryParentEmail] = useState(initialState.deliveryParentEmail);
 
   const totalSteps = 7;
+
+  // Debug: Log childProfile changes
+  useEffect(() => {
+    console.log('[ParentOnboarding] childProfile state changed:', childProfile);
+    console.log('[ParentOnboarding] childProfile type:', typeof childProfile);
+    console.log('[ParentOnboarding] childProfile.id:', childProfile?.id);
+  }, [childProfile]);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    const state = {
+      currentStep,
+      childData,
+      childProfile,
+      welcomeBonus,
+      rewards,
+      tasks,
+      childEmail,
+      deliveryParentEmail,
+    };
+    console.log('[ParentOnboarding] Saving state to localStorage:', state);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }, [currentStep, childData, childProfile, welcomeBonus, rewards, tasks, childEmail, deliveryParentEmail]);
+
+  // Clear localStorage on unmount if completed
+  const clearOnboardingState = () => {
+    console.log('[ParentOnboarding] Clearing onboarding state');
+    localStorage.removeItem(STORAGE_KEY);
+  };
 
   // Step 1: Your Child
   const handleStep1Submit = async () => {
@@ -40,10 +93,28 @@ export default function ParentOnboarding() {
       return;
     }
 
+    if (!childData.age) {
+      setError('Please enter your child\'s age (required for COPPA compliance)');
+      return;
+    }
+
+    const age = parseInt(childData.age);
+    if (isNaN(age) || age < 1 || age > 18) {
+      setError('Please enter a valid age between 1 and 18');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
+      console.log('[ParentOnboarding] Step 1: Creating child profile with data:', {
+        name: childData.name,
+        grade: childData.grade || undefined,
+        age: childData.age ? parseInt(childData.age) : undefined,
+        schoolName: childData.schoolName || undefined,
+      });
+
       const response = await childProfileService.createChildProfile({
         name: childData.name,
         grade: childData.grade || undefined,
@@ -52,9 +123,21 @@ export default function ParentOnboarding() {
         welcomeBonusPoints: 0,
       });
 
-      setChildProfile(response.data);
+      console.log('[ParentOnboarding] Step 1: Full API response:', response);
+      console.log('[ParentOnboarding] Step 1: response.data:', response.data);
+      console.log('[ParentOnboarding] Step 1: response.data type:', typeof response.data);
+      console.log('[ParentOnboarding] Step 1: response.data.id:', response.data?.id);
+
+      // The service returns the child profile directly (already unwrapped by api.js interceptor)
+      console.log('[ParentOnboarding] Step 1: About to call setChildProfile with:', response);
+      setChildProfile(response);
+      
+      console.log('[ParentOnboarding] Step 1: Moving to step 2');
       setCurrentStep(2);
+      
+      console.log('[ParentOnboarding] Step 1: Complete - childProfile should be set in next render');
     } catch (err) {
+      console.error('[ParentOnboarding] Step 1 error:', err);
       setError(err.response?.data?.error || 'Failed to create child profile');
     } finally {
       setLoading(false);
@@ -82,8 +165,11 @@ export default function ParentOnboarding() {
   const handleAddReward = async (rewardData) => {
     console.log('[ParentOnboarding.handleAddReward] Called with:', rewardData);
     console.log('[ParentOnboarding.handleAddReward] childProfile:', childProfile);
+    console.log('[ParentOnboarding.handleAddReward] childProfile type:', typeof childProfile);
+    console.log('[ParentOnboarding.handleAddReward] childProfile.id:', childProfile?.id);
     
     if (!childProfile || !childProfile.id) {
+      console.error('[ParentOnboarding.handleAddReward] childProfile validation failed');
       setError('Child profile not found. Please go back to Step 1 and create the child profile again.');
       return;
     }
@@ -101,7 +187,8 @@ export default function ParentOnboarding() {
       const response = await rewardService.createReward(payload);
       console.log('[ParentOnboarding.handleAddReward] Success:', response);
       
-      setRewards([...rewards, response.data]);
+      // The service already unwraps response.data, so response is the reward object
+      setRewards([...rewards, response]);
     } catch (err) {
       console.error('[ParentOnboarding.handleAddReward] Error:', err);
       console.error('[ParentOnboarding.handleAddReward] Error response:', err.response);
@@ -130,7 +217,8 @@ export default function ParentOnboarding() {
         ...taskData,
         childProfileId: childProfile.id,
       });
-      setTasks([...tasks, response.data]);
+      // The service already unwraps response.data, so response is the task object
+      setTasks([...tasks, response]);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to create task');
     } finally {
@@ -185,7 +273,12 @@ export default function ParentOnboarding() {
 
   // Step 7: You're All Set
   const handleComplete = () => {
+    console.log('[ParentOnboarding] handleComplete called');
+    console.log('[ParentOnboarding] Clearing onboarding state...');
+    clearOnboardingState();
+    console.log('[ParentOnboarding] Navigating to /parent...');
     navigate('/parent');
+    console.log('[ParentOnboarding] Navigate called');
   };
 
   const renderStep = () => {
@@ -300,10 +393,18 @@ function Step1YourChild({ data, setData, onNext }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <Input
-          label="Child's Name *"
+          label="Child's Name "
           value={data.name}
           onChange={(e) => setData({ ...data, name: e.target.value })}
           placeholder="e.g., Alex"
+          fullWidth
+        />
+        <Input
+          label="Age"
+          type="number"
+          value={data.age}
+          onChange={(e) => setData({ ...data, age: e.target.value })}
+          placeholder="e.g., 12"
           fullWidth
         />
         <Input
@@ -311,14 +412,6 @@ function Step1YourChild({ data, setData, onNext }) {
           value={data.grade}
           onChange={(e) => setData({ ...data, grade: e.target.value })}
           placeholder="e.g., 6th"
-          fullWidth
-        />
-        <Input
-          label="Age (Optional)"
-          type="number"
-          value={data.age}
-          onChange={(e) => setData({ ...data, age: e.target.value })}
-          placeholder="e.g., 12"
           fullWidth
         />
         <Input
@@ -425,7 +518,10 @@ function Step3Rewards({ childName, rewards, onAddReward, onNext, onBack }) {
           }}>
             <div>
               <div style={{ fontWeight: '600', color: COLORS.textPrimary }}>{reward.title}</div>
-              <div style={{ fontSize: '14px', color: COLORS.textSecondary }}>{reward.pointsCost} points</div>
+              {reward.description && (
+                <div style={{ fontSize: '13px', color: COLORS.textSecondary, marginTop: '2px' }}>{reward.description}</div>
+              )}
+              <div style={{ fontSize: '14px', color: COLORS.textSecondary, marginTop: '4px' }}>{reward.pointsCost} points</div>
             </div>
           </div>
         ))}

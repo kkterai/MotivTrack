@@ -5,6 +5,7 @@ export const taskService = {
    * Create a new task
    */
   async createTask(data) {
+    // Backend returns { success, data: task }, interceptor unwraps to { success, data }
     const response = await api.post('/tasks', data);
     return response.data;
   },
@@ -13,6 +14,7 @@ export const taskService = {
    * Get all tasks for a child
    */
   async getTasksByChild(childProfileId, activeOnly = true) {
+    // Backend returns { success, data: tasks[] }, interceptor unwraps to { success, data }
     const response = await api.get(`/tasks/child/${childProfileId}`, {
       params: { activeOnly },
     });
@@ -23,6 +25,7 @@ export const taskService = {
    * Get task by ID
    */
   async getTaskById(taskId) {
+    // Backend returns { success, data: task }, interceptor unwraps to { success, data }
     const response = await api.get(`/tasks/${taskId}`);
     return response.data;
   },
@@ -31,6 +34,7 @@ export const taskService = {
    * Update a task
    */
   async updateTask(taskId, data) {
+    // Backend returns { success, data: task }, interceptor unwraps to { success, data }
     const response = await api.put(`/tasks/${taskId}`, data);
     return response.data;
   },
@@ -39,6 +43,7 @@ export const taskService = {
    * Get task statistics for a child
    */
   async getTaskStats(childProfileId) {
+    // Backend returns { success, data: stats }, interceptor unwraps to { success, data }
     const response = await api.get(`/tasks/child/${childProfileId}/stats`);
     return response.data;
   },
