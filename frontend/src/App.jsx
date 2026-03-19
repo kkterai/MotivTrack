@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/useAuthStore';
 import { ProtectedRoute } from './components/layout';
 import { Login, ChildDashboard, ParentDashboard, TeacherPortal } from './pages';
+import ParentOnboarding from './pages/ParentOnboarding';
 
 /**
  * App - Main application component with routing
@@ -40,6 +41,16 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['child']}>
               <ChildDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected Route - Parent Onboarding */}
+        <Route
+          path="/parent/onboarding"
+          element={
+            <ProtectedRoute allowedRoles={['admin_parent']}>
+              <ParentOnboarding />
             </ProtectedRoute>
           }
         />

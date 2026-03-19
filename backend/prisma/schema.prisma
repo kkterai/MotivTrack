@@ -47,6 +47,13 @@ enum PointSource {
   welcome_bonus
 }
 
+enum InvitationStatus {
+  pending
+  accepted
+  expired
+  cancelled
+}
+
 enum NotificationType {
   task_claim_pending
   verification_reminder
@@ -84,6 +91,8 @@ model User {
   notifications            NotificationLog[]
   taskClaimsAsChild        TaskClaim[]        @relation("ChildClaims")
   taskClaimsAsVerifier     TaskClaim[]        @relation("VerifiedBy")
+  invitationsSent          Invitation[]       @relation("InvitationsSent")
+  invitationsAccepted      Invitation[]       @relation("InvitationsAccepted")
 
   @@index([email])
   @@index([role])
@@ -116,6 +125,7 @@ model ChildProfile {
   schoolExpectations   SchoolExpectation[]
   teacherAssignments   TeacherAssignment[]
   behaviorRatings      BehaviorRating[]
+  invitations          Invitation[]
 
   @@index([adminParentId])
   @@index([deliveryParentId])
@@ -362,6 +372,31 @@ model TeacherAssignment {
   @@index([childProfileId])
   @@index([schoolDomain])
   @@index([isActive])
+}
+
+model Invitation {
+  id             String           @id @default(uuid())
+  email          String
+  token          String           @unique
+  role           Role
+  status         InvitationStatus @default(pending)
+  invitedBy      String
+  childProfileId String?
+  acceptedBy     String?
+  expiresAt      DateTime
+  createdAt      DateTime         @default(now())
+  acceptedAt     DateTime?
+
+  // Relations
+  inviter      User          @relation("InvitationsSent", fields: [invitedBy], references: [id])
+  acceptor     User?         @relation("InvitationsAccepted", fields: [acceptedBy], references: [id])
+  childProfile ChildProfile? @relation(fields: [childProfileId], references: [id])
+
+  @@index([email])
+  @@index([token])
+  @@index([invitedBy])
+  @@index([status])
+  @@index([expiresAt])
 }
 
 model BehaviorRating {
