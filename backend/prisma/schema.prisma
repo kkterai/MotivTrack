@@ -1,0 +1,378 @@
+// MotivTrack Database Schema
+// Based on PRD v5.0 - Complete data model for ADHD-focused task and reward system
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin_parent
+  delivery_parent
+  child
+  teacher
+}
+
+enum TaskCategory {
+  kitchen
+  bathroom
+  bedroom
+  laundry
+  outdoor
+  general
+}
+
+enum ClaimType {
+  done
+  extra_well_done
+}
+
+enum ClaimStatus {
+  pending
+  verified
+  redo_requested
+}
+
+enum PointSource {
+  task_claim
+  school_behavior
+  streak_bonus
+  daily_bonus
+  weekly_bonus
+  welcome_bonus
+}
+
+enum NotificationType {
+  task_claim_pending
+  verification_reminder
+  points_awarded
+  reward_redeemed
+  reward_delivery_reminder
+  teacher_reminder
+  streak_milestone
+  annual_survey
+}
+
+enum NotificationStatus {
+  sent
+  opened
+  dismissed
+}
+
+// ============================================================================
+// USER & PROFILE MODELS
+// ============================================================================
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  role         Role
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  childProfilesAsAdmin     ChildProfile[]     @relation("AdminParent")
+  childProfilesAsDelivery  ChildProfile[]     @relation("DeliveryParent")
+  teacherAssignments       TeacherAssignment[]
+  notifications            NotificationLog[]
+  taskClaimsAsChild        TaskClaim[]        @relation("ChildClaims")
+  taskClaimsAsVerifier     TaskClaim[]        @relation("VerifiedBy")
+
+  @@index([email])
+  @@index([role])
+}
+
+model ChildProfile {
+  id           String   @id @default(uuid())
+  name         String
+  grade        String?
+  schoolName   String?
+  schoolDomain String?
+  isArchived   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Parent relationships
+  adminParentId    String
+  adminParent      User    @relation("AdminParent", fields: [adminParentId], references: [id])
+  deliveryParentId String?
+  deliveryParent   User?   @relation("DeliveryParent", fields: [deliveryParentId], references: [id])
+
+  // Relations
+  tasks                Task[]
+  taskClaims           TaskClaim[]
+  pointTransactions    PointTransaction[]
+  rewards              Reward[]
+  rewardPreferences    RewardPreference[]
+  rewardRedemptions    RewardRedemption[]
+  streakRecord         StreakRecord?
+  schoolExpectations   SchoolExpectation[]
+  teacherAssignments   TeacherAssignment[]
+  behaviorRatings      BehaviorRating[]
+
+  @@index([adminParentId])
+  @@index([deliveryParentId])
+  @@index([isArchived])
+}
+
+// ============================================================================
+// TASK LIBRARY & TASKS
+// ============================================================================
+
+model LibraryTask {
+  id                          String       @id @default(uuid())
+  title                       String
+  description                 String       @db.Text
+  doneStandard                String       @db.Text
+  extraWellDoneStandard       String       @db.Text
+  tips                        String       @db.Text
+  suggestedPointsDone         Int
+  suggestedPointsExtraWellDone Int
+  category                    TaskCategory
+  isArchived                  Boolean      @default(false)
+  createdAt                   DateTime     @default(now())
+
+  // Relations
+  tasks Task[]
+
+  @@index([category])
+  @@index([isArchived])
+}
+
+model Task {
+  id                    String       @id @default(uuid())
+  childProfileId        String
+  title                 String
+  doneStandard          String       @db.Text
+  extraWellDoneStandard String       @db.Text
+  tips                  String       @db.Text
+  pointsDone            Int
+  pointsExtraWellDone   Int
+  isFromLibrary         Boolean      @default(false)
+  libraryTaskId         String?
+  isArchived            Boolean      @default(false)
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  // Relations
+  childProfile ChildProfile @relation(fields: [childProfileId], references: [id])
+  libraryTask  LibraryTask? @relation(fields: [libraryTaskId], references: [id])
+  taskClaims   TaskClaim[]
+
+  @@index([childProfileId])
+  @@index([libraryTaskId])
+  @@index([isArchived])
+}
+
+// ============================================================================
+// TASK CLAIMS & VERIFICATION
+// ============================================================================
+
+model TaskClaim {
+  id             String      @id @default(uuid())
+  taskId         String
+  childId        String
+  childProfileId String
+  claimType      ClaimType
+  status         ClaimStatus
+  claimedAt      DateTime    @default(now())
+  verifiedAt     DateTime?
+  verifiedBy     String?
+  redoNote       String?     @db.Text
+
+  // Relations
+  task         Task         @relation(fields: [taskId], references: [id])
+  child        User         @relation("ChildClaims", fields: [childId], references: [id])
+  childProfile ChildProfile @relation(fields: [childProfileId], references: [id])
+  verifier     User?        @relation("VerifiedBy", fields: [verifiedBy], references: [id])
+
+  @@index([taskId])
+  @@index([childId])
+  @@index([childProfileId])
+  @@index([status])
+  @@index([claimedAt])
+}
+
+// ============================================================================
+// POINTS & TRANSACTIONS (IMMUTABLE)
+// ============================================================================
+
+model PointTransaction {
+  id                       String      @id @default(uuid())
+  childProfileId           String
+  amount                   Int
+  source                   PointSource
+  referenceTaskClaimId     String?
+  referenceBehaviorRatingId String?
+  createdAt                DateTime    @default(now())
+
+  // Relations
+  childProfile ChildProfile @relation(fields: [childProfileId], references: [id])
+
+  @@index([childProfileId])
+  @@index([source])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// REWARDS & REDEMPTIONS
+// ============================================================================
+
+model Reward {
+  id             String   @id @default(uuid())
+  childProfileId String
+  title          String
+  description    String   @db.Text
+  pointCost      Int
+  isActive       Boolean  @default(true)
+  isRetired      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  createdBy      String?
+
+  // Relations
+  childProfile      ChildProfile       @relation(fields: [childProfileId], references: [id])
+  rewardRedemptions RewardRedemption[]
+
+  @@index([childProfileId])
+  @@index([isActive])
+  @@index([isRetired])
+}
+
+model RewardRedemption {
+  id             String    @id @default(uuid())
+  rewardId       String
+  childProfileId String
+  redeemedAt     DateTime  @default(now())
+  deliveredAt    DateTime?
+  deliveredBy    String?
+
+  // Relations
+  reward       Reward       @relation(fields: [rewardId], references: [id])
+  childProfile ChildProfile @relation(fields: [childProfileId], references: [id])
+
+  @@index([rewardId])
+  @@index([childProfileId])
+  @@index([redeemedAt])
+}
+
+model RewardPreference {
+  id             String   @id @default(uuid())
+  childProfileId String
+  schoolYear     String
+  preferences    String[]
+  freeText       String?  @db.Text
+  createdAt      DateTime @default(now())
+
+  // Relations
+  childProfile ChildProfile @relation(fields: [childProfileId], references: [id])
+
+  @@index([childProfileId])
+  @@index([schoolYear])
+}
+
+// ============================================================================
+// STREAKS
+// ============================================================================
+
+model StreakRecord {
+  id                 String    @id @default(uuid())
+  childProfileId     String    @unique
+  currentDailyStreak Int       @default(0)
+  currentWeeklyStreak Int      @default(0)
+  longestStreak      Int       @default(0)
+  lastCompletedDate  DateTime?
+  updatedAt          DateTime  @updatedAt
+
+  // Relations
+  childProfile ChildProfile @relation(fields: [childProfileId], references: [id])
+
+  @@index([childProfileId])
+}
+
+// ============================================================================
+// NOTIFICATIONS
+// ============================================================================
+
+model NotificationLog {
+  id       String             @id @default(uuid())
+  userId   String
+  type     NotificationType
+  payload  String             @db.Text // JSON string
+  sentAt   DateTime           @default(now())
+  openedAt DateTime?
+  status   NotificationStatus
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([sentAt])
+}
+
+// ============================================================================
+// SCHOOL BEHAVIOR TRACK
+// ============================================================================
+
+model SchoolExpectation {
+  id             String   @id @default(uuid())
+  childProfileId String
+  title          String
+  description    String   @db.Text
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  // Relations
+  childProfile    ChildProfile     @relation(fields: [childProfileId], references: [id])
+  behaviorRatings BehaviorRating[]
+
+  @@index([childProfileId])
+  @@index([isActive])
+}
+
+model TeacherAssignment {
+  id             String    @id @default(uuid())
+  teacherId      String
+  childProfileId String
+  schoolDomain   String
+  isActive       Boolean   @default(true)
+  invitedAt      DateTime  @default(now())
+  acceptedAt     DateTime?
+
+  // Relations
+  teacher         User             @relation(fields: [teacherId], references: [id])
+  childProfile    ChildProfile     @relation(fields: [childProfileId], references: [id])
+  behaviorRatings BehaviorRating[]
+
+  @@index([teacherId])
+  @@index([childProfileId])
+  @@index([schoolDomain])
+  @@index([isActive])
+}
+
+model BehaviorRating {
+  id                   String   @id @default(uuid())
+  teacherAssignmentId  String
+  childProfileId       String
+  expectationId        String
+  rating               Int // 1-4 scale
+  comment              String?  @db.Text
+  submittedAt          DateTime @default(now())
+
+  // Relations
+  teacherAssignment TeacherAssignment @relation(fields: [teacherAssignmentId], references: [id])
+  childProfile      ChildProfile      @relation(fields: [childProfileId], references: [id])
+  expectation       SchoolExpectation @relation(fields: [expectationId], references: [id])
+
+  @@index([teacherAssignmentId])
+  @@index([childProfileId])
+  @@index([expectationId])
+  @@index([submittedAt])
+}
