@@ -162,8 +162,8 @@ model Task {
   title                 String
   icon                  String?
   doneStandard          String       @db.Text
-  extraWellDoneStandard String       @db.Text
-  tips                  String       @db.Text
+  extraWellDoneStandard String?       @db.Text
+  tips                  String?       @db.Text
   pointsDone            Int
   pointsExtraWellDone   Int
   isFromLibrary         Boolean      @default(false)

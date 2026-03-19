@@ -8,7 +8,7 @@ export class TaskController {
    */
   static async createTask(req: Request, res: Response) {
     try {
-      const userId = (req as any).user.userId;
+      const userId = (req as any).user.id;
       const {
         childProfileId,
         title,
@@ -19,6 +19,9 @@ export class TaskController {
         pointsExtraWellDone,
         libraryTaskId
       } = req.body;
+
+      console.log('[TaskController.createTask] userId:', userId);
+      console.log('[TaskController.createTask] req.body:', req.body);
 
       const task = await TaskService.createTask(
         {
@@ -39,6 +42,7 @@ export class TaskController {
         data: task,
       });
     } catch (error: any) {
+      console.error('[TaskController.createTask] Error:', error);
       res.status(400).json({
         success: false,
         error: error.message,

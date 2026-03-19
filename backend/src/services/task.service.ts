@@ -6,6 +6,9 @@ export class TaskService {
    * Create a new task for a child
    */
   static async createTask(data: CreateTaskDTO, createdBy: string) {
+    console.log('[TaskService.createTask] Input data:', data);
+    console.log('[TaskService.createTask] createdBy (user ID):', createdBy);
+    
     // Verify child profile exists and user has permission
     const childProfile = await prisma.childProfile.findUnique({
       where: { id: data.childProfileId },
@@ -19,8 +22,13 @@ export class TaskService {
       throw new Error('Child profile not found');
     }
 
+    console.log('[TaskService.createTask] childProfile.adminParentId:', childProfile.adminParentId);
+    console.log('[TaskService.createTask] createdBy:', createdBy);
+    console.log('[TaskService.createTask] Match?', childProfile.adminParentId === createdBy);
+
     // Only admin parent can create tasks
     if (childProfile.adminParentId !== createdBy) {
+      console.error('[TaskService.createTask] Permission denied - adminParentId mismatch');
       throw new Error('Only admin parent can create tasks');
     }
 
