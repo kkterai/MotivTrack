@@ -4,13 +4,25 @@ import { useEffect } from 'react';
  * Modal Dialog component
  * Preserves exact styling from original App.jsx
  */
-export default function Modal({ 
-  isOpen, 
-  onClose, 
-  title, 
+export default function Modal({
+  isOpen,
+  onClose,
+  title,
   children,
-  maxWidth = '500px',
+  footer,
+  size = 'medium',
+  maxWidth,
 }) {
+  // Determine maxWidth based on size if not explicitly provided
+  const getMaxWidth = () => {
+    if (maxWidth) return maxWidth;
+    switch (size) {
+      case 'small': return '400px';
+      case 'large': return '800px';
+      case 'xlarge': return '1000px';
+      default: return '500px'; // medium
+    }
+  };
   // Close on Escape key
   useEffect(() => {
     const handleEscape = (e) => {
@@ -58,10 +70,11 @@ export default function Modal({
         style={{
           background: 'white',
           borderRadius: '16px',
-          maxWidth,
+          maxWidth: getMaxWidth(),
           width: '100%',
           maxHeight: '90vh',
-          overflow: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
           boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
         }}
         onClick={(e) => e.stopPropagation()}
@@ -99,9 +112,19 @@ export default function Modal({
             </button>
           </div>
         )}
-        <div style={{ padding: '20px' }}>
+        <div style={{ padding: '20px', flex: 1, overflowY: 'auto' }}>
           {children}
         </div>
+        {footer && (
+          <div
+            style={{
+              padding: '20px',
+              borderTop: '1px solid #e5e7eb',
+            }}
+          >
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

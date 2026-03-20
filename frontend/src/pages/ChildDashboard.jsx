@@ -131,7 +131,7 @@ export default function ChildDashboard() {
   return (
     <div style={{ minHeight: '100vh', background: COLORS.background }}>
       {/* Welcome Banner */}
-      {showWelcomeBanner && totalPoints > 0 && childProfile && (
+      {showWelcomeBanner && childProfile && (
         <WelcomeBanner
           totalPoints={totalPoints}
           welcomeBonusAmount={welcomeBonusAmount}
@@ -646,9 +646,50 @@ function HistoryTab({ userId }) {
 
 // Welcome Banner Component
 function WelcomeBanner({ totalPoints, welcomeBonusAmount, parentReference, onDismiss }) {
-  // Calculate the breakdown: parent bonus + 3 from MotivTrack
-  const motivTrackBonus = 3;
-  const parentBonus = welcomeBonusAmount - motivTrackBonus;
+  // The welcome bonus is what the parent gave
+  const parentBonus = welcomeBonusAmount;
+  const motivTrackBonus = 3; // MotivTrack always gives 3 points
+  
+  // Build the message dynamically based on what points they have
+  const buildMessage = () => {
+    if (totalPoints === 0) {
+      return (
+        <>
+          <p style={{ margin: '0 0 12px 0' }}>
+            Welcome! You're starting with <strong>0 points</strong>, but don't worry — you'll earn points quickly!
+          </p>
+          <p style={{ margin: '0' }}>
+            To earn points, tap <strong>"Done"</strong> on a task when you finish it. Your {parentReference} will confirm it, and your points will update.
+          </p>
+        </>
+      );
+    }
+    
+    if (parentBonus > 0) {
+      return (
+        <>
+          <p style={{ margin: '0 0 12px 0' }}>
+            You already have <strong>{totalPoints} points</strong>! Your {parentReference} gave you <strong>{parentBonus} {parentBonus === 1 ? 'point' : 'points'}</strong> for the commitment it took to reach your dashboard, and we gave you <strong>{motivTrackBonus} points</strong> because we're just glad you're here.
+          </p>
+          <p style={{ margin: '0' }}>
+            To earn more points, tap <strong>"Done"</strong> on a task when you finish it — your {parentReference} will confirm and your points will update.
+          </p>
+        </>
+      );
+    }
+    
+    // Parent gave 0, but child has points from MotivTrack
+    return (
+      <>
+        <p style={{ margin: '0 0 12px 0' }}>
+          You already have <strong>{totalPoints} {totalPoints === 1 ? 'point' : 'points'}</strong>! We gave you {totalPoints === 1 ? 'this' : 'these'} because we're just glad you're here.
+        </p>
+        <p style={{ margin: '0' }}>
+          To earn more points, tap <strong>"Done"</strong> on a task when you finish it — your {parentReference} will confirm and your points will update.
+        </p>
+      </>
+    );
+  };
 
   return (
     <div style={{
@@ -718,21 +759,7 @@ function WelcomeBanner({ totalPoints, welcomeBonusAmount, parentReference, onDis
             lineHeight: '1.6',
             marginBottom: '20px',
           }}>
-            <p style={{ margin: '0 0 12px 0' }}>
-              You already have <strong>{totalPoints} points</strong>!
-              {parentBonus > 0 && (
-                <> Your {parentReference} gave you <strong>{parentBonus} points</strong> for the commitment it took to reach your dashboard</>
-              )}
-              {parentBonus > 0 && motivTrackBonus > 0 && ', and '}
-              {motivTrackBonus > 0 && (
-                <>we gave you <strong>{motivTrackBonus} points</strong> because we're just glad you're here</>
-              )}
-              .
-            </p>
-            
-            <p style={{ margin: '0' }}>
-              To earn more points, tap <strong>"Done"</strong> on a task when you finish it — your {parentReference} will confirm and your points will update.
-            </p>
+            {buildMessage()}
           </div>
 
           <button

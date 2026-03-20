@@ -105,7 +105,7 @@ export class AuthController {
    */
   static async updateParentReference(req: Request, res: Response) {
     try {
-      const userId = (req as any).user.userId;
+      const userId = (req as any).user.id;
       const { parentReference } = req.body;
 
       if (!parentReference) {
