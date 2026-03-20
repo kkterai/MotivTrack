@@ -1,5 +1,6 @@
 import prisma from '../config/database.js';
 import { PointService } from './point.service.js';
+import { NotificationService } from './notification.service.js';
 
 interface SaveRewardPreferencesDTO {
   childProfileId: string;
@@ -91,6 +92,25 @@ export class ChildOnboardingService {
 
     // Award onboarding bonus
     const bonus = await this.awardOnboardingBonus(childProfileId);
+
+    // Send notification to child about welcome bonus
+    // @ts-ignore - childUserId exists in schema but types may not be regenerated
+    if (childProfile.childUserId) {
+      await NotificationService.sendNotification({
+        // @ts-ignore
+        userId: childProfile.childUserId,
+        type: 'points_awarded',
+        payload: {
+          title: '🎉 Welcome bonus!',
+          body: `You earned ${bonus.points} points just for getting started! Keep going to earn more.`,
+          actionUrl: '/child',
+          metadata: {
+            points: bonus.points,
+            source: 'welcome_bonus',
+          },
+        },
+      });
+    }
 
     // TODO: Notify parent that child has joined
     // This can be implemented later with a proper notification system

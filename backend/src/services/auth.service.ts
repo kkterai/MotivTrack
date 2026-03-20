@@ -16,7 +16,8 @@ export class AuthService {
     email: string,
     password: string,
     role: Role,
-    name?: string
+    name?: string,
+    parentReference?: string
   ) {
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -37,12 +38,14 @@ export class AuthService {
         passwordHash,
         role,
         name,
+        parentReference,
       },
       select: {
         id: true,
         email: true,
         role: true,
         name: true,
+        parentReference: true,
         createdAt: true,
       },
     });
@@ -95,6 +98,7 @@ export class AuthService {
         email: user.email,
         role: user.role,
         name: user.name,
+        parentReference: user.parentReference,
         ...(childProfileId && { childProfileId }),
       },
       token,
@@ -147,6 +151,35 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  /**
+   * Update parent reference
+   */
+  static async updateParentReference(userId: string, parentReference: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Update parent reference
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { parentReference },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        name: true,
+        parentReference: true,
+        createdAt: true,
+      },
+    });
+
+    return updatedUser;
   }
 
   /**

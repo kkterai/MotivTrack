@@ -71,4 +71,34 @@ export class PointController {
       });
     }
   }
+
+  /**
+   * Award welcome bonus points to a child
+   * POST /api/points/child/:childProfileId/welcome-bonus
+   */
+  static async awardWelcomeBonus(req: Request, res: Response) {
+    try {
+      const { childProfileId } = req.params;
+      const { amount } = req.body;
+
+      if (!amount || amount <= 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Amount must be greater than 0',
+        });
+      }
+
+      const transaction = await PointService.awardWelcomeBonus(childProfileId, amount);
+
+      res.status(200).json({
+        success: true,
+        data: transaction,
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  }
 }

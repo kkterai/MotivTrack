@@ -4,6 +4,7 @@ import { childProfileService } from '../services/childProfiles';
 import { invitationService } from '../services/invitations';
 import { taskService } from '../services/tasks';
 import { rewardService } from '../services/rewards';
+import { pointService } from '../services/points';
 import { COLORS } from '../utils/constants';
 import { Button, Card, Input } from '../components/common';
 
@@ -30,11 +31,12 @@ export default function ParentOnboarding() {
     }
     return {
       currentStep: 1,
-      childData: { name: '', grade: '', age: '', schoolName: '' },
+      childData: { name: '' },
       childProfile: null,
       welcomeBonus: 5,
       rewards: [],
       tasks: [],
+      parentReference: '',
       childEmail: '',
       deliveryParentEmail: '',
       invitationData: null,
@@ -53,11 +55,12 @@ export default function ParentOnboarding() {
   const [welcomeBonus, setWelcomeBonus] = useState(initialState.welcomeBonus);
   const [rewards, setRewards] = useState(initialState.rewards);
   const [tasks, setTasks] = useState(initialState.tasks);
+  const [parentReference, setParentReference] = useState(initialState.parentReference);
   const [childEmail, setChildEmail] = useState(initialState.childEmail);
   const [deliveryParentEmail, setDeliveryParentEmail] = useState(initialState.deliveryParentEmail);
   const [invitationData, setInvitationData] = useState(initialState.invitationData);
 
-  const totalSteps = 7;
+  const totalSteps = 8;
 
   // Debug: Log childProfile changes
   useEffect(() => {
@@ -75,13 +78,14 @@ export default function ParentOnboarding() {
       welcomeBonus,
       rewards,
       tasks,
+      parentReference,
       childEmail,
       deliveryParentEmail,
       invitationData,
     };
     console.log('[ParentOnboarding] Saving state to localStorage:', state);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [currentStep, childData, childProfile, welcomeBonus, rewards, tasks, childEmail, deliveryParentEmail, invitationData]);
+  }, [currentStep, childData, childProfile, welcomeBonus, rewards, tasks, parentReference, childEmail, deliveryParentEmail, invitationData]);
 
   // Clear localStorage on unmount if completed
   const clearOnboardingState = () => {
@@ -96,34 +100,17 @@ export default function ParentOnboarding() {
       return;
     }
 
-    if (!childData.age) {
-      setError('Please enter your child\'s age (required for COPPA compliance)');
-      return;
-    }
-
-    const age = parseInt(childData.age);
-    if (isNaN(age) || age < 1 || age > 18) {
-      setError('Please enter a valid age between 1 and 18');
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
     try {
       console.log('[ParentOnboarding] Step 1: Creating child profile with data:', {
         name: childData.name,
-        grade: childData.grade || undefined,
-        age: childData.age ? parseInt(childData.age) : undefined,
-        schoolName: childData.schoolName || undefined,
       });
 
       const response = await childProfileService.createChildProfile({
         name: childData.name,
-        grade: childData.grade || undefined,
-        age: childData.age ? parseInt(childData.age) : undefined,
-        schoolName: childData.schoolName || undefined,
-        welcomeBonusPoints: 0,
+        welcomeBonusPoints: 0, // Bonus will be awarded in Step 2
       });
 
       console.log('[ParentOnboarding] Step 1: Full API response:', response);
@@ -148,11 +135,25 @@ export default function ParentOnboarding() {
   };
 
   // Step 2: Give Head Start
-  // Note: Welcome bonus was already awarded in Step 1 during child profile creation
-  // This step just allows parents to see/confirm the bonus amount before proceeding
-  const handleStep2Submit = () => {
+  // Award the welcome bonus points that the parent selected
+  const handleStep2Submit = async () => {
+    setLoading(true);
     setError(null);
-    setCurrentStep(3);
+
+    try {
+      // Award welcome bonus points if amount > 0
+      if (welcomeBonus > 0 && childProfile?.id) {
+        console.log('[ParentOnboarding] Step 2: Awarding welcome bonus:', welcomeBonus);
+        await pointService.awardWelcomeBonus(childProfile.id, welcomeBonus);
+        console.log('[ParentOnboarding] Step 2: Welcome bonus awarded successfully');
+      }
+      setCurrentStep(3);
+    } catch (err) {
+      console.error('[ParentOnboarding] Step 2 error:', err);
+      setError(err.response?.data?.error || 'Failed to award welcome bonus');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Step 3: What Can [Child] Earn?
@@ -208,7 +209,41 @@ export default function ParentOnboarding() {
       return;
     }
     setError(null);
-    setCurrentStep(5);
+    setCurrentStep(4.5);
+  };
+
+  // Step 4.5: Parent Reference
+  const handleStep4_5Submit = async () => {
+    if (!parentReference) {
+      setError('Please enter how your child should refer to you');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Update the user's parent reference in the backend
+      const response = await fetch('/api/auth/update-parent-reference', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({ parentReference }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update parent reference');
+      }
+
+      setCurrentStep(5);
+    } catch (err) {
+      console.error('[ParentOnboarding] Step 4.5 error:', err);
+      setError(err.message || 'Failed to save parent reference');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAddTask = async (taskData) => {
@@ -298,8 +333,10 @@ export default function ParentOnboarding() {
         return <Step3Rewards childName={childData.name} rewards={rewards} onAddReward={handleAddReward} onNext={handleStep3Submit} onBack={() => setCurrentStep(2)} />;
       case 4:
         return <Step4Tasks childName={childData.name} tasks={tasks} onAddTask={handleAddTask} onNext={handleStep4Submit} onBack={() => setCurrentStep(3)} />;
+      case 4.5:
+        return <Step4_5ParentReference childName={childData.name} parentReference={parentReference} setParentReference={setParentReference} onNext={handleStep4_5Submit} onBack={() => setCurrentStep(4)} />;
       case 5:
-        return <Step5InviteChild childName={childData.name} email={childEmail} setEmail={setChildEmail} rewards={rewards} tasks={tasks} welcomeBonus={welcomeBonus} onNext={handleStep5Submit} onBack={() => setCurrentStep(4)} />;
+        return <Step5InviteChild childName={childData.name} email={childEmail} setEmail={setChildEmail} rewards={rewards} tasks={tasks} welcomeBonus={welcomeBonus} onNext={handleStep5Submit} onBack={() => setCurrentStep(4.5)} />;
       case 5.5:
         return <Step5bCopyInvitation childName={childData.name} invitationData={invitationData} onNext={() => setCurrentStep(6)} onBack={() => setCurrentStep(5)} />;
       case 6:
@@ -402,33 +439,12 @@ function Step1YourChild({ data, setData, onNext }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <Input
-          label="Child's Name "
+          label="Child's Name"
           value={data.name}
           onChange={(e) => setData({ ...data, name: e.target.value })}
           placeholder="e.g., Alex"
           fullWidth
-        />
-        <Input
-          label="Age"
-          type="number"
-          value={data.age}
-          onChange={(e) => setData({ ...data, age: e.target.value })}
-          placeholder="e.g., 12"
-          fullWidth
-        />
-        <Input
-          label="Grade (Optional)"
-          value={data.grade}
-          onChange={(e) => setData({ ...data, grade: e.target.value })}
-          placeholder="e.g., 6th"
-          fullWidth
-        />
-        <Input
-          label="School Name (Optional)"
-          value={data.schoolName}
-          onChange={(e) => setData({ ...data, schoolName: e.target.value })}
-          placeholder="e.g., Lincoln Middle School"
-          fullWidth
+          required
         />
       </div>
 
@@ -682,6 +698,50 @@ function Step4Tasks({ childName, tasks, onAddTask, onNext, onBack }) {
           Back
         </Button>
         <Button onClick={onNext} variant="primary" disabled={tasks.length === 0}>
+          Continue
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+function Step4_5ParentReference({ childName, parentReference, setParentReference, onNext, onBack }) {
+  return (
+    <Card>
+      <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '8px', color: COLORS.textPrimary }}>
+        How should {childName} refer to you?
+      </h2>
+      <p style={{ fontSize: '14px', color: COLORS.textSecondary, marginBottom: '24px' }}>
+        This helps personalize {childName}'s experience
+      </p>
+
+      <Input
+        label="Parent Reference"
+        type="text"
+        value={parentReference}
+        onChange={(e) => setParentReference(e.target.value)}
+        placeholder="e.g., Mom, Dad, Parent"
+        fullWidth
+        required
+      />
+
+      <div style={{
+        background: '#eff6ff',
+        border: '1px solid #bfdbfe',
+        borderRadius: '8px',
+        padding: '12px 16px',
+        marginTop: '16px',
+      }}>
+        <p style={{ fontSize: '13px', color: '#1e40af', margin: 0 }}>
+          💡 <strong>Example:</strong> If you enter "Mom", {childName} will see messages like "Mom approved your task!"
+        </p>
+      </div>
+
+      <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'space-between' }}>
+        <Button onClick={onBack} variant="outline">
+          Back
+        </Button>
+        <Button onClick={onNext} variant="primary">
           Continue
         </Button>
       </div>

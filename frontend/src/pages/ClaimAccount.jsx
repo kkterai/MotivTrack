@@ -254,7 +254,7 @@ export default function ClaimAccount() {
             marginBottom: '24px',
           }}>
             <p style={{ fontSize: '13px', color: '#166534', margin: 0 }}>
-              ✨ Once you create your account, you'll be able to see your tasks, earn points, and redeem rewards!
+              ✨ Once you create your account, you'll be able to earn points towards earning rewards!
             </p>
           </div>
 

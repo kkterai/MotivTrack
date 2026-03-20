@@ -26,4 +26,14 @@ export const pointService = {
     const response = await api.get(`/points/child/${childProfileId}/metrics`);
     return response.data;
   },
+
+  /**
+   * Award welcome bonus points to a child
+   */
+  async awardWelcomeBonus(childProfileId, amount) {
+    const response = await api.post(`/points/child/${childProfileId}/welcome-bonus`, {
+      amount,
+    });
+    return response.data;
+  },
 };

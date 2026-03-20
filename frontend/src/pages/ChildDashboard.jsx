@@ -4,6 +4,8 @@ import { useTaskStore } from '../stores/useTaskStore';
 import { usePointStore } from '../stores/usePointStore';
 import { useRewardStore } from '../stores/useRewardStore';
 import { useNotificationStore } from '../stores/useNotificationStore';
+import { childProfileService } from '../services/childProfiles';
+import { pointService } from '../services/points';
 import { COLORS } from '../utils/constants';
 import { Button, Card } from '../components/common';
 
@@ -14,13 +16,24 @@ import { Button, Card } from '../components/common';
 export default function ChildDashboard() {
   const { user, logout } = useAuthStore();
   const { tasks, fetchTasks, loading: tasksLoading } = useTaskStore();
-  const { totalPoints, fetchTotalPoints } = usePointStore();
+  const { balance: totalPoints, fetchBalance } = usePointStore();
   const { rewards, fetchRewards, redeemReward, loading: rewardsLoading } = useRewardStore();
   const { notifications, fetchNotifications } = useNotificationStore();
   
   const [activeTab, setActiveTab] = useState('tasks'); // tasks, rewards, school, history
   const [expandedTask, setExpandedTask] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showWelcomeBanner, setShowWelcomeBanner] = useState(false);
+  const [childProfile, setChildProfile] = useState(null);
+  const [welcomeBonusAmount, setWelcomeBonusAmount] = useState(0);
+
+  // Check if welcome banner should be shown
+  useEffect(() => {
+    const bannerDismissed = localStorage.getItem('welcomeBannerDismissed');
+    if (!bannerDismissed && user?.childProfileId) {
+      setShowWelcomeBanner(true);
+    }
+  }, [user]);
 
   // Load data on mount
   useEffect(() => {
@@ -30,13 +43,40 @@ export default function ChildDashboard() {
     if (user?.childProfileId) {
       console.log('[ChildDashboard] Fetching data for childProfileId:', user.childProfileId);
       fetchTasks(user.childProfileId);
-      fetchTotalPoints(user.childProfileId);
+      fetchBalance(user.childProfileId);
       fetchRewards(user.childProfileId);
       fetchNotifications(user.id);
+      
+      // Fetch child profile to get parent info
+      childProfileService.getChildProfile(user.childProfileId)
+        .then(profile => {
+          console.log('[ChildDashboard] Child profile:', profile);
+          setChildProfile(profile);
+        })
+        .catch(error => {
+          console.error('[ChildDashboard] Error fetching child profile:', error);
+        });
+      
+      // Fetch point history to get welcome bonus amount
+      pointService.getHistory(user.childProfileId, 100)
+        .then(history => {
+          const welcomeBonus = history.find(tx => tx.source === 'welcome_bonus');
+          if (welcomeBonus) {
+            setWelcomeBonusAmount(welcomeBonus.amount);
+          }
+        })
+        .catch(error => {
+          console.error('[ChildDashboard] Error fetching point history:', error);
+        });
     } else {
       console.error('[ChildDashboard] No childProfileId found on user object!');
     }
   }, [user]);
+
+  const handleDismissWelcomeBanner = () => {
+    localStorage.setItem('welcomeBannerDismissed', 'true');
+    setShowWelcomeBanner(false);
+  };
 
   const handleTaskSubmit = async (taskId, quality) => {
     setSubmitting(true);
@@ -75,7 +115,7 @@ export default function ChildDashboard() {
     try {
       await redeemReward(rewardId, user.childProfileId);
       await Promise.all([
-        fetchTotalPoints(user.childProfileId),
+        fetchBalance(user.childProfileId),
         fetchRewards(user.childProfileId),
         fetchNotifications(user.id),
       ]);
@@ -90,6 +130,16 @@ export default function ChildDashboard() {
 
   return (
     <div style={{ minHeight: '100vh', background: COLORS.background }}>
+      {/* Welcome Banner */}
+      {showWelcomeBanner && totalPoints > 0 && childProfile && (
+        <WelcomeBanner
+          totalPoints={totalPoints}
+          welcomeBonusAmount={welcomeBonusAmount}
+          parentReference={childProfile.adminParent?.parentReference || childProfile.adminParent?.name || 'your parent'}
+          onDismiss={handleDismissWelcomeBanner}
+        />
+      )}
+
       {/* Header */}
       <div style={{
         background: COLORS.gradient,
@@ -590,6 +640,122 @@ function HistoryTab({ userId }) {
       <p style={{ fontSize: '14px', color: COLORS.textSecondary }}>
         You'll be able to see your completed tasks and redeemed rewards here.
       </p>
+    </div>
+  );
+}
+
+// Welcome Banner Component
+function WelcomeBanner({ totalPoints, welcomeBonusAmount, parentReference, onDismiss }) {
+  // Calculate the breakdown: parent bonus + 3 from MotivTrack
+  const motivTrackBonus = 3;
+  const parentBonus = welcomeBonusAmount - motivTrackBonus;
+
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      padding: '20px',
+      position: 'relative',
+    }}>
+      <div style={{
+        maxWidth: '600px',
+        margin: '0 auto',
+        position: 'relative',
+      }}>
+        {/* Dismiss Button */}
+        <button
+          onClick={onDismiss}
+          style={{
+            position: 'absolute',
+            top: '-8px',
+            right: '-8px',
+            background: 'rgba(255, 255, 255, 0.3)',
+            border: 'none',
+            borderRadius: '50%',
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            fontSize: '18px',
+            color: 'white',
+            transition: 'background 0.2s',
+          }}
+          onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.5)'}
+          onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.3)'}
+        >
+          ×
+        </button>
+
+        {/* Banner Content */}
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.15)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '16px',
+          padding: '24px',
+          color: 'white',
+        }}>
+          <div style={{
+            fontSize: '48px',
+            textAlign: 'center',
+            marginBottom: '16px',
+          }}>
+            🎉
+          </div>
+          
+          <h2 style={{
+            fontSize: '24px',
+            fontWeight: '700',
+            textAlign: 'center',
+            marginBottom: '16px',
+            margin: '0 0 16px 0',
+          }}>
+            Welcome to MotivTrack!
+          </h2>
+
+          <div style={{
+            fontSize: '16px',
+            lineHeight: '1.6',
+            marginBottom: '20px',
+          }}>
+            <p style={{ margin: '0 0 12px 0' }}>
+              You already have <strong>{totalPoints} points</strong>!
+              {parentBonus > 0 && (
+                <> Your {parentReference} gave you <strong>{parentBonus} points</strong> for the commitment it took to reach your dashboard</>
+              )}
+              {parentBonus > 0 && motivTrackBonus > 0 && ', and '}
+              {motivTrackBonus > 0 && (
+                <>we gave you <strong>{motivTrackBonus} points</strong> because we're just glad you're here</>
+              )}
+              .
+            </p>
+            
+            <p style={{ margin: '0' }}>
+              To earn more points, tap <strong>"Done"</strong> on a task when you finish it — your {parentReference} will confirm and your points will update.
+            </p>
+          </div>
+
+          <button
+            onClick={onDismiss}
+            style={{
+              width: '100%',
+              padding: '14px',
+              background: 'white',
+              color: COLORS.primary,
+              border: 'none',
+              borderRadius: '12px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'transform 0.2s',
+            }}
+            onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+            onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+          >
+            Got it! Let's go 🚀
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

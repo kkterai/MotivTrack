@@ -9,13 +9,14 @@ export class AuthController {
    */
   static async register(req: Request, res: Response) {
     try {
-      const { email, password, name, role } = req.body;
+      const { email, password, name, role, parentReference } = req.body;
 
       const result = await AuthService.register(
         email,
         password,
         role,
-        name
+        name,
+        parentReference
       );
 
       res.status(201).json({
@@ -89,6 +90,36 @@ export class AuthController {
       res.status(200).json({
         success: true,
         message: 'Password updated successfully',
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * Update parent reference
+   * PATCH /api/auth/update-parent-reference
+   */
+  static async updateParentReference(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user.userId;
+      const { parentReference } = req.body;
+
+      if (!parentReference) {
+        return res.status(400).json({
+          success: false,
+          error: 'Parent reference is required',
+        });
+      }
+
+      const updatedUser = await AuthService.updateParentReference(userId, parentReference);
+
+      res.status(200).json({
+        success: true,
+        data: updatedUser,
       });
     } catch (error: any) {
       res.status(400).json({

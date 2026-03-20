@@ -18,7 +18,7 @@ export default function Login({ onLogin, onRegister, loading = false, error = nu
     email: '',
     password: '',
     name: '',
-    role: 'admin_parent', // Default role for registration
+    role: 'admin_parent', // Default role for registration (only parents can register directly)
   });
 
   const handleSubmit = async (e) => {
@@ -99,7 +99,7 @@ export default function Login({ onLogin, onRegister, loading = false, error = nu
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {mode === 'register' && (
               <Input
-                label="Full Name"
+                label="Name"
                 type="text"
                 value={formData.name}
                 onChange={(e) => handleChange('name', e.target.value)}
@@ -128,41 +128,6 @@ export default function Login({ onLogin, onRegister, loading = false, error = nu
               required
               disabled={loading}
             />
-
-            {mode === 'register' && (
-              <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: COLORS.textPrimary,
-                  marginBottom: '8px',
-                }}>
-                  I am a:
-                </label>
-                <select
-                  value={formData.role}
-                  onChange={(e) => handleChange('role', e.target.value)}
-                  disabled={loading}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: `1px solid #e0e0e0`,
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    color: COLORS.textPrimary,
-                    background: 'white',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    boxSizing: 'border-box',
-                  }}
-                >
-                  <option value="admin_parent">Parent (Full Access)</option>
-                  <option value="delivery_parent">Parent (Delivery Only)</option>
-                  <option value="child">Child</option>
-                  <option value="teacher">Teacher</option>
-                </select>
-              </div>
-            )}
 
             <Button
               type="submit"

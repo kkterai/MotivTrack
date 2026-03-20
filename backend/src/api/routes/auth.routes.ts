@@ -39,4 +39,11 @@ router.get('/me', authenticate, AuthController.getProfile);
  */
 router.put('/password', authenticate, AuthController.updatePassword);
 
+/**
+ * @route   PATCH /api/auth/update-parent-reference
+ * @desc    Update parent reference
+ * @access  Private
+ */
+router.patch('/update-parent-reference', authenticate, AuthController.updateParentReference);
+
 export default router;

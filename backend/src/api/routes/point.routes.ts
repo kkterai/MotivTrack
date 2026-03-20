@@ -25,4 +25,11 @@ router.get('/child/:childProfileId/history', authenticate, PointController.getHi
  */
 router.get('/child/:childProfileId/metrics', authenticate, PointController.getMetrics);
 
+/**
+ * @route   POST /api/points/child/:childProfileId/welcome-bonus
+ * @desc    Award welcome bonus points to a child
+ * @access  Private (Admin Parent only)
+ */
+router.post('/child/:childProfileId/welcome-bonus', authenticate, PointController.awardWelcomeBonus);
+
 export default router;
