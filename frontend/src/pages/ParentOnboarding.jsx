@@ -37,6 +37,7 @@ export default function ParentOnboarding() {
       tasks: [],
       childEmail: '',
       deliveryParentEmail: '',
+      invitationData: null,
     };
   };
 
@@ -54,6 +55,7 @@ export default function ParentOnboarding() {
   const [tasks, setTasks] = useState(initialState.tasks);
   const [childEmail, setChildEmail] = useState(initialState.childEmail);
   const [deliveryParentEmail, setDeliveryParentEmail] = useState(initialState.deliveryParentEmail);
+  const [invitationData, setInvitationData] = useState(initialState.invitationData);
 
   const totalSteps = 7;
 
@@ -75,10 +77,11 @@ export default function ParentOnboarding() {
       tasks,
       childEmail,
       deliveryParentEmail,
+      invitationData,
     };
     console.log('[ParentOnboarding] Saving state to localStorage:', state);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [currentStep, childData, childProfile, welcomeBonus, rewards, tasks, childEmail, deliveryParentEmail]);
+  }, [currentStep, childData, childProfile, welcomeBonus, rewards, tasks, childEmail, deliveryParentEmail, invitationData]);
 
   // Clear localStorage on unmount if completed
   const clearOnboardingState = () => {
@@ -237,14 +240,18 @@ export default function ParentOnboarding() {
     setError(null);
 
     try {
-      await invitationService.createInvitation({
+      const response = await invitationService.createInvitation({
         email: childEmail,
         role: 'child',
         childProfileId: childProfile.id,
+        childName: childData.name,
       });
-      setCurrentStep(6);
+      
+      // Store the invitation data (emailText contains subject, body, link)
+      setInvitationData(response.emailText);
+      setCurrentStep(5.5); // Go to copy invitation step
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to send invitation');
+      setError(err.response?.data?.error || 'Failed to create invitation');
     } finally {
       setLoading(false);
     }
@@ -293,8 +300,10 @@ export default function ParentOnboarding() {
         return <Step4Tasks childName={childData.name} tasks={tasks} onAddTask={handleAddTask} onNext={handleStep4Submit} onBack={() => setCurrentStep(3)} />;
       case 5:
         return <Step5InviteChild childName={childData.name} email={childEmail} setEmail={setChildEmail} rewards={rewards} tasks={tasks} welcomeBonus={welcomeBonus} onNext={handleStep5Submit} onBack={() => setCurrentStep(4)} />;
+      case 5.5:
+        return <Step5bCopyInvitation childName={childData.name} invitationData={invitationData} onNext={() => setCurrentStep(6)} onBack={() => setCurrentStep(5)} />;
       case 6:
-        return <Step6InviteDeliveryParent childName={childData.name} email={deliveryParentEmail} setEmail={setDeliveryParentEmail} onNext={handleStep6Submit} onSkip={() => setCurrentStep(7)} onBack={() => setCurrentStep(5)} />;
+        return <Step6InviteDeliveryParent childName={childData.name} email={deliveryParentEmail} setEmail={setDeliveryParentEmail} onNext={handleStep6Submit} onSkip={() => setCurrentStep(7)} onBack={() => setCurrentStep(5.5)} />;
       case 7:
         return <Step7AllSet childName={childData.name} onComplete={handleComplete} />;
       default:
@@ -717,6 +726,139 @@ function Step5InviteChild({ childName, email, setEmail, rewards, tasks, welcomeB
         </Button>
         <Button onClick={onNext} variant="primary">
           Send Invitation
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+function Step5bCopyInvitation({ childName, invitationData, onNext, onBack }) {
+  const [copiedMessage, setCopiedMessage] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  if (!invitationData) {
+    return (
+      <Card>
+        <p style={{ color: COLORS.textSecondary }}>Loading invitation...</p>
+      </Card>
+    );
+  }
+
+  const handleCopyMessage = () => {
+    const fullMessage = `${invitationData.subject}\n\n${invitationData.body}`;
+    navigator.clipboard.writeText(fullMessage);
+    setCopiedMessage(true);
+    setTimeout(() => setCopiedMessage(false), 2000);
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(invitationData.link);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
+
+  return (
+    <Card>
+      <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '8px', color: COLORS.textPrimary }}>
+        Invite {childName}
+      </h2>
+      <p style={{ fontSize: '14px', color: COLORS.textSecondary, marginBottom: '24px' }}>
+        Send this message from your own email or text app.
+      </p>
+
+      {/* Invitation Card */}
+      <div style={{
+        background: '#f9fafb',
+        border: '1px solid #e5e7eb',
+        borderRadius: '12px',
+        padding: '20px',
+        marginBottom: '20px',
+      }}>
+        {/* Subject */}
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{
+            display: 'block',
+            fontSize: '12px',
+            fontWeight: '600',
+            marginBottom: '6px',
+            color: COLORS.textSecondary,
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+          }}>
+            Subject
+          </label>
+          <p style={{
+            fontSize: '14px',
+            fontWeight: '600',
+            color: COLORS.textPrimary,
+            margin: 0,
+          }}>
+            {invitationData.subject}
+          </p>
+        </div>
+
+        {/* Message Preview */}
+        <div>
+          <label style={{
+            display: 'block',
+            fontSize: '12px',
+            fontWeight: '600',
+            marginBottom: '6px',
+            color: COLORS.textSecondary,
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+          }}>
+            Message
+          </label>
+          <textarea
+            readOnly
+            value={invitationData.body}
+            style={{
+              width: '100%',
+              minHeight: '200px',
+              padding: '12px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontFamily: 'inherit',
+              color: COLORS.textPrimary,
+              background: 'white',
+              resize: 'vertical',
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Copy Buttons */}
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+        <Button onClick={handleCopyMessage} variant="primary" style={{ flex: 1 }}>
+          {copiedMessage ? '✓ Copied!' : 'Copy message'}
+        </Button>
+        <Button onClick={handleCopyLink} variant="outline" style={{ flex: 1 }}>
+          {copiedLink ? '✓ Copied!' : 'Copy link'}
+        </Button>
+      </div>
+
+      {/* Instructions */}
+      <div style={{
+        background: '#eff6ff',
+        border: '1px solid #bfdbfe',
+        borderRadius: '8px',
+        padding: '12px 16px',
+        marginBottom: '24px',
+      }}>
+        <p style={{ fontSize: '13px', color: '#1e40af', margin: 0 }}>
+          💡 <strong>Tip:</strong> Copy the message and paste it into your email or text app to send to {childName}.
+        </p>
+      </div>
+
+      {/* Navigation */}
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Button onClick={onBack} variant="outline">
+          Back
+        </Button>
+        <Button onClick={onNext} variant="primary">
+          Continue
         </Button>
       </div>
     </Card>

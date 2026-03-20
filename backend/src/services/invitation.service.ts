@@ -75,10 +75,11 @@ export class InvitationService {
     parentName: string,
     token: string,
     appUrl: string = process.env.FRONTEND_URL || 'http://localhost:5173'
-  ): string {
+  ): { subject: string; body: string; link: string } {
     const registrationLink = `${appUrl}/claim-account?token=${token}`;
     
-    return `Hi ${childName}!
+    const subject = `You're invited to MotivTrack!`;
+    const body = `Hi ${childName}!
 
 Your parent, ${parentName}, has set up MotivTrack for you! 🎉
 
@@ -96,6 +97,8 @@ Once you're in, you'll be able to:
 
 See you inside!
 - The MotivTrack Team`;
+
+    return { subject, body, link: registrationLink };
   }
 
   /**

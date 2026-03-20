@@ -3,6 +3,8 @@ import { useAuthStore } from './stores/useAuthStore';
 import { ProtectedRoute } from './components/layout';
 import { Login, ChildDashboard, ParentDashboard, TeacherPortal } from './pages';
 import ParentOnboarding from './pages/ParentOnboarding';
+import ChildOnboarding from './pages/ChildOnboarding';
+import ClaimAccount from './pages/ClaimAccount';
 
 /**
  * App - Main application component with routing
@@ -32,6 +34,19 @@ export default function App() {
                 error={error}
               />
             )
+          }
+        />
+
+        {/* Public Route - Claim Account (Child Registration via Invitation) */}
+        <Route path="/claim-account" element={<ClaimAccount />} />
+
+        {/* Protected Route - Child Onboarding */}
+        <Route
+          path="/child/onboarding"
+          element={
+            <ProtectedRoute allowedRoles={['child']}>
+              <ChildOnboarding />
+            </ProtectedRoute>
           }
         />
 
