@@ -79,12 +79,23 @@ export class AuthService {
     // Generate JWT
     const token = this.generateToken(user.id, user.email, user.role);
 
+    // For child users, include their childProfileId
+    let childProfileId: string | undefined;
+    if (user.role === 'child') {
+      const childProfile = await prisma.childProfile.findUnique({
+        where: { childUserId: user.id },
+        select: { id: true },
+      });
+      childProfileId = childProfile?.id;
+    }
+
     return {
       user: {
         id: user.id,
         email: user.email,
         role: user.role,
         name: user.name,
+        ...(childProfileId && { childProfileId }),
       },
       token,
     };

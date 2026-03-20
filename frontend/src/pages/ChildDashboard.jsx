@@ -24,11 +24,17 @@ export default function ChildDashboard() {
 
   // Load data on mount
   useEffect(() => {
-    if (user?.id) {
-      fetchTasks(user.id);
-      fetchTotalPoints(user.id);
-      fetchRewards(user.id);
+    console.log('[ChildDashboard] User:', user);
+    console.log('[ChildDashboard] childProfileId:', user?.childProfileId);
+    
+    if (user?.childProfileId) {
+      console.log('[ChildDashboard] Fetching data for childProfileId:', user.childProfileId);
+      fetchTasks(user.childProfileId);
+      fetchTotalPoints(user.childProfileId);
+      fetchRewards(user.childProfileId);
       fetchNotifications(user.id);
+    } else {
+      console.error('[ChildDashboard] No childProfileId found on user object!');
     }
   }, [user]);
 
@@ -50,7 +56,7 @@ export default function ChildDashboard() {
       
       // Refresh data
       await Promise.all([
-        fetchTasks(user.id),
+        fetchTasks(user.childProfileId),
         fetchNotifications(user.id),
       ]);
       
@@ -67,10 +73,10 @@ export default function ChildDashboard() {
     if (!confirm('Are you sure you want to redeem this reward?')) return;
     
     try {
-      await redeemReward(rewardId, user.id);
+      await redeemReward(rewardId, user.childProfileId);
       await Promise.all([
-        fetchTotalPoints(user.id),
-        fetchRewards(user.id),
+        fetchTotalPoints(user.childProfileId),
+        fetchRewards(user.childProfileId),
         fetchNotifications(user.id),
       ]);
     } catch (error) {

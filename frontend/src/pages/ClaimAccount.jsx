@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { invitationService } from '../services/invitations';
 import api from '../services/api';
 import { useAuthStore } from '../stores/useAuthStore';
-import { COLORS } from '../utils/constants';
+import { COLORS, STORAGE_KEYS } from '../utils/constants';
 import { Button, Card, Input } from '../components/common';
 
 /**
@@ -90,14 +90,28 @@ export default function ClaimAccount() {
         name: firstName,
       });
 
-      // Store auth token and user data in localStorage
+      // Clear any existing session first
+      localStorage.clear();
+      
+      // Store NEW auth token and user data in localStorage
       if (response.success && response.data.token) {
-        localStorage.setItem('motivtrack_auth_token', response.data.token);
-        localStorage.setItem('motivtrack_user_data', JSON.stringify(response.data.user));
+        console.log('[ClaimAccount] Registration response:', response);
+        console.log('[ClaimAccount] User data:', response.data.user);
+        console.log('[ClaimAccount] User role:', response.data.user.role);
+        
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, response.data.token);
+        localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(response.data.user));
+        
+        // Mark that this is a new registration requiring onboarding
+        localStorage.setItem('motivtrack_needs_onboarding', 'true');
+        
+        console.log('[ClaimAccount] Stored user data:', localStorage.getItem(STORAGE_KEYS.USER_DATA));
+        console.log('[ClaimAccount] Needs onboarding flag:', localStorage.getItem('motivtrack_needs_onboarding'));
       }
 
       // Redirect to child onboarding flow
       // Force a full page reload to let the app re-initialize with the new auth state
+      console.log('[ClaimAccount] Redirecting to /child/onboarding');
       window.location.href = '/child/onboarding';
     } catch (err) {
       console.error('Registration failed:', err);

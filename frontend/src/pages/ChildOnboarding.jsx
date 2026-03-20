@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/useAuthStore';
+import { childOnboardingService } from '../services/childOnboarding';
 import { COLORS } from '../utils/constants';
 import { Button, Card } from '../components/common';
 
@@ -67,6 +68,7 @@ export default function ChildOnboarding() {
   // Clear localStorage when onboarding is complete
   const clearOnboardingState = () => {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem('motivtrack_needs_onboarding');
   };
 
   const handleCategoryToggle = (categoryValue) => {
@@ -79,35 +81,27 @@ export default function ChildOnboarding() {
     });
   };
 
-  const handleStep1Submit = () => {
+  const handleStep1Submit = async () => {
     if (selectedCategories.length === 0) {
       return; // Require at least one selection
     }
-    setCurrentStep(2);
-  };
-
-  const handleStep2Submit = async () => {
+    
     setLoading(true);
 
     try {
-      // TODO: Save reward preferences to backend
-      // const preferences = {
-      //   categories: selectedCategories,
-      //   otherCategory: selectedCategories.includes('other') ? otherCategory : null,
-      //   specificReward: specificReward || null,
-      // };
-      // await rewardPreferenceService.save(preferences);
-
-      // TODO: Award onboarding points (3 points)
-      // await pointService.awardOnboardingBonus(user.childProfileId, 3);
-
-      // TODO: Send notification to parent
-      // await notificationService.notifyParentOfChildJoined(user.childProfileId);
+      // Save reward preferences and award onboarding points
+      await childOnboardingService.completeOnboarding({
+        categories: selectedCategories,
+        otherCategory: selectedCategories.includes('other') ? otherCategory : null,
+        specificReward: null, // Removed specific reward step
+      });
 
       // Move to transition screen
-      setCurrentStep(3);
+      setCurrentStep(2);
     } catch (err) {
       console.error('[ChildOnboarding] Failed to save preferences:', err);
+      // Still move to transition screen even if save fails
+      setCurrentStep(2);
     } finally {
       setLoading(false);
     }
@@ -129,20 +123,11 @@ export default function ChildOnboarding() {
             onCategoryToggle={handleCategoryToggle}
             onOtherChange={setOtherCategory}
             onNext={handleStep1Submit}
-          />
-        );
-      case 2:
-        return (
-          <Step2Specific
-            specificReward={specificReward}
-            onSpecificChange={setSpecificReward}
-            onNext={handleStep2Submit}
-            onBack={() => setCurrentStep(1)}
             loading={loading}
           />
         );
-      case 3:
-        return <Step3Transition parentName={user?.name || 'Your parent'} onNext={handleComplete} />;
+      case 2:
+        return <Step2Transition parentName={user?.name || 'Your parent'} onNext={handleComplete} />;
       default:
         return null;
     }
@@ -161,7 +146,7 @@ export default function ChildOnboarding() {
 // STEP COMPONENTS
 // ============================================================================
 
-function Step1Dream({ selectedCategories, otherCategory, onCategoryToggle, onOtherChange, onNext }) {
+function Step1Dream({ selectedCategories, otherCategory, onCategoryToggle, onOtherChange, onNext, loading }) {
   const showOtherInput = selectedCategories.includes('other');
 
   return (
@@ -227,59 +212,15 @@ function Step1Dream({ selectedCategories, otherCategory, onCategoryToggle, onOth
         onClick={onNext}
         variant="primary"
         fullWidth
-        disabled={selectedCategories.length === 0}
+        disabled={selectedCategories.length === 0 || loading}
       >
-        Next →
+        {loading ? 'Saving...' : 'Continue →'}
       </Button>
     </Card>
   );
 }
 
-function Step2Specific({ specificReward, onSpecificChange, onNext, onBack, loading }) {
-  return (
-    <Card>
-      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎯</div>
-        <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '8px', color: COLORS.textPrimary }}>
-          What specifically would you love to earn?
-        </h2>
-        <p style={{ fontSize: '14px', color: COLORS.textSecondary }}>
-          This is optional, but it helps us personalize your experience!
-        </p>
-      </div>
-
-      {/* Specific Reward Input */}
-      <textarea
-        value={specificReward}
-        onChange={(e) => onSpecificChange(e.target.value)}
-        placeholder="For example: 'A new skateboard' or '$20 to save for a bike' or 'Extra hour of gaming on weekends'"
-        style={{
-          width: '100%',
-          minHeight: '120px',
-          padding: '12px 16px',
-          border: '1px solid #d1d5db',
-          borderRadius: '8px',
-          fontSize: '14px',
-          fontFamily: 'inherit',
-          resize: 'vertical',
-          marginBottom: '24px',
-        }}
-      />
-
-      {/* Navigation Buttons */}
-      <div style={{ display: 'flex', gap: '12px' }}>
-        <Button onClick={onBack} variant="outline" style={{ flex: 1 }}>
-          Back
-        </Button>
-        <Button onClick={onNext} variant="primary" style={{ flex: 1 }} disabled={loading}>
-          {loading ? 'Saving...' : 'Continue →'}
-        </Button>
-      </div>
-    </Card>
-  );
-}
-
-function Step3Transition({ parentName, onNext }) {
+function Step2Transition({ parentName, onNext }) {
   // Auto-advance after 3 seconds
   useEffect(() => {
     const timer = setTimeout(() => {

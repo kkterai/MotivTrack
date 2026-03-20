@@ -101,11 +101,25 @@ export default function App() {
  * Helper function to get the appropriate route based on user role
  */
 function getRoleBasedRoute(role) {
+  console.log('[App.getRoleBasedRoute] Called with role:', role);
+  
+  // Check if child needs onboarding
+  if (role === 'child') {
+    const needsOnboarding = localStorage.getItem('motivtrack_needs_onboarding');
+    console.log('[App.getRoleBasedRoute] Child detected, needs onboarding:', needsOnboarding);
+    if (needsOnboarding === 'true') {
+      console.log('[App.getRoleBasedRoute] Redirecting to /child/onboarding');
+      return '/child/onboarding';
+    }
+    console.log('[App.getRoleBasedRoute] Redirecting to /child dashboard');
+    return '/child';
+  }
+  
+  console.log('[App.getRoleBasedRoute] Non-child role, using switch');
   switch (role) {
-    case 'child':
-      return '/child';
     case 'admin_parent':
     case 'delivery_parent':
+      console.log('[App.getRoleBasedRoute] Redirecting to /parent');
       return '/parent';
     case 'teacher':
       return '/teacher';

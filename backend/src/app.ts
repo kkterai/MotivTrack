@@ -16,6 +16,7 @@ import notificationRoutes from './api/routes/notification.routes.js';
 import seedRoutes from './api/routes/seed.routes.js';
 import invitationRoutes from './api/routes/invitation.routes.js';
 import childProfileRoutes from './api/routes/childProfile.routes.js';
+import childOnboardingRoutes from './api/routes/childOnboarding.routes.js';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3001;
@@ -66,6 +67,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/seed', seedRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/child-profiles', childProfileRoutes);
+app.use('/api/child-onboarding', childOnboardingRoutes);
 
 // ============================================================================
 // ERROR HANDLING

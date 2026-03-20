@@ -141,12 +141,25 @@ export class AuthController {
       // Mark invitation as accepted
       await InvitationService.acceptInvitation(token, result.user.id);
 
-      // TODO: Link the user to the child profile
-      // This will be done in a future update to the ChildProfile model
+      // Link the user to the child profile
+      const prisma = await import('../../config/database.js').then(m => m.default);
+      await prisma.childProfile.update({
+        where: { id: invitation.childProfileId },
+        data: { childUserId: result.user.id },
+      });
+
+      // Include childProfileId in the response
+      const userWithProfile = {
+        ...result.user,
+        childProfileId: invitation.childProfileId,
+      };
 
       res.status(201).json({
         success: true,
-        data: result,
+        data: {
+          ...result,
+          user: userWithProfile,
+        },
       });
     } catch (error: any) {
       res.status(400).json({

@@ -91,6 +91,7 @@ model User {
   // Relations
   childProfilesAsAdmin     ChildProfile[]     @relation("AdminParent")
   childProfilesAsDelivery  ChildProfile[]     @relation("DeliveryParent")
+  childProfile             ChildProfile?      @relation("ChildUser")
   teacherAssignments       TeacherAssignment[]
   notifications            NotificationLog[]
   taskClaimsAsChild        TaskClaim[]        @relation("ChildClaims")
@@ -121,6 +122,10 @@ model ChildProfile {
   deliveryParentId String?
   deliveryParent   User?   @relation("DeliveryParent", fields: [deliveryParentId], references: [id])
 
+  // Child user account (set when child registers)
+  childUserId String? @unique
+  childUser   User?   @relation("ChildUser", fields: [childUserId], references: [id])
+
   // Relations
   tasks                Task[]
   taskClaims           TaskClaim[]
@@ -136,6 +141,7 @@ model ChildProfile {
 
   @@index([adminParentId])
   @@index([deliveryParentId])
+  @@index([childUserId])
   @@index([isArchived])
 }
 
