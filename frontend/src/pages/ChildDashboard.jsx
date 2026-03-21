@@ -6,6 +6,7 @@ import { useRewardStore } from '../stores/useRewardStore';
 import { useNotificationStore } from '../stores/useNotificationStore';
 import { childProfileService } from '../services/childProfiles';
 import { pointService } from '../services/points';
+import { claimService } from '../services/claims';
 import { COLORS } from '../utils/constants';
 import { Button, Card } from '../components/common';
 
@@ -26,6 +27,7 @@ export default function ChildDashboard() {
   const [showWelcomeBanner, setShowWelcomeBanner] = useState(false);
   const [childProfile, setChildProfile] = useState(null);
   const [welcomeBonusAmount, setWelcomeBonusAmount] = useState(0);
+  const [taskClaims, setTaskClaims] = useState([]);
 
   // Check if welcome banner should be shown
   useEffect(() => {
@@ -46,6 +48,16 @@ export default function ChildDashboard() {
       fetchBalance(user.childProfileId);
       fetchRewards(user.childProfileId);
       fetchNotifications(user.id);
+      
+      // Fetch task claims to show status
+      claimService.getClaimsByChild(user.childProfileId)
+        .then(response => {
+          console.log('[ChildDashboard] Task claims:', response.data);
+          setTaskClaims(response.data || []);
+        })
+        .catch(error => {
+          console.error('[ChildDashboard] Error fetching task claims:', error);
+        });
       
       // Fetch child profile to get parent info
       childProfileService.getChildProfile(user.childProfileId)
@@ -82,16 +94,10 @@ export default function ChildDashboard() {
     setSubmitting(true);
     try {
       // Submit task claim
-      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/claims`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${useAuthStore.getState().token}`,
-        },
-        body: JSON.stringify({
-          taskId,
-          claimType: quality,
-        }),
+      await claimService.createClaim({
+        taskId,
+        childProfileId: user.childProfileId,
+        claimType: quality,
       });
       
       // Refresh data
@@ -99,6 +105,10 @@ export default function ChildDashboard() {
         fetchTasks(user.childProfileId),
         fetchNotifications(user.id),
       ]);
+      
+      // Refresh claims
+      const claimsResponse = await claimService.getClaimsByChild(user.childProfileId);
+      setTaskClaims(claimsResponse.data || []);
       
       setExpandedTask(null);
     } catch (error) {
@@ -272,6 +282,7 @@ export default function ChildDashboard() {
         {activeTab === 'tasks' && (
           <TasksTab
             tasks={tasks}
+            taskClaims={taskClaims}
             loading={tasksLoading}
             expandedTask={expandedTask}
             setExpandedTask={setExpandedTask}
@@ -302,7 +313,7 @@ export default function ChildDashboard() {
 }
 
 // Tasks Tab Component
-function TasksTab({ tasks, loading, expandedTask, setExpandedTask, onSubmit, submitting }) {
+function TasksTab({ tasks, taskClaims, loading, expandedTask, setExpandedTask, onSubmit, submitting }) {
   if (loading) {
     return <div style={{ textAlign: 'center', padding: '40px', color: COLORS.textSecondary }}>Loading tasks...</div>;
   }
@@ -318,36 +329,54 @@ function TasksTab({ tasks, loading, expandedTask, setExpandedTask, onSubmit, sub
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {tasks.map(task => (
-        <TaskCard
-          key={task.id}
-          task={task}
-          isExpanded={expandedTask === task.id}
-          onToggle={() => setExpandedTask(expandedTask === task.id ? null : task.id)}
-          onSubmit={onSubmit}
-          submitting={submitting}
-        />
-      ))}
+      {tasks.map(task => {
+        // Find the most recent claim for this task
+        const taskClaim = taskClaims
+          .filter(claim => claim.taskId === task.id)
+          .sort((a, b) => new Date(b.claimedAt) - new Date(a.claimedAt))[0];
+        
+        return (
+          <TaskCard
+            key={task.id}
+            task={task}
+            claim={taskClaim}
+            isExpanded={expandedTask === task.id}
+            onToggle={() => setExpandedTask(expandedTask === task.id ? null : task.id)}
+            onSubmit={onSubmit}
+            submitting={submitting}
+          />
+        );
+      })}
     </div>
   );
 }
 
 // Task Card Component
-function TaskCard({ task, isExpanded, onToggle, onSubmit, submitting }) {
+function TaskCard({ task, claim, isExpanded, onToggle, onSubmit, submitting }) {
   const tips = Array.isArray(task.tips) ? task.tips : (task.tips ? [task.tips] : []);
   
+  // Determine task status based on claim
+  const hasPendingClaim = claim && claim.status === 'pending';
+  const isVerified = claim && claim.status === 'verified';
+  const needsRedo = claim && claim.status === 'redo_requested';
+  
   return (
-    <Card style={{ padding: 0, overflow: 'hidden' }}>
+    <Card style={{
+      padding: 0,
+      overflow: 'hidden',
+      borderLeft: needsRedo ? '4px solid #E74C3C' : hasPendingClaim ? `4px solid ${COLORS.accent}` : isVerified ? `4px solid ${COLORS.primary}` : 'none',
+      background: needsRedo ? '#FFEBEE' : isVerified ? '#F0FDF9' : 'white',
+    }}>
       {/* Task Header */}
       <div
-        onClick={onToggle}
+        onClick={!hasPendingClaim && !isVerified ? onToggle : undefined}
         style={{
           padding: '16px',
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          cursor: 'pointer',
-          background: isExpanded ? COLORS.backgroundLight : 'white',
+          cursor: (!hasPendingClaim && !isVerified) ? 'pointer' : 'default',
+          background: isExpanded ? COLORS.backgroundLight : (needsRedo ? '#FFEBEE' : isVerified ? '#F0FDF9' : 'white'),
         }}
       >
         <div style={{ fontSize: '32px' }}>{task.icon || '📋'}</div>
@@ -359,20 +388,76 @@ function TaskCard({ task, isExpanded, onToggle, onSubmit, submitting }) {
             {task.doneStandard?.substring(0, 60)}{task.doneStandard?.length > 60 ? '...' : ''}
           </p>
         </div>
-        <div style={{
-          background: COLORS.primary,
-          color: 'white',
-          padding: '4px 12px',
-          borderRadius: '12px',
-          fontSize: '14px',
-          fontWeight: '600',
-        }}>
-          +{task.pointsDone}pt {task.pointsExtraWellDone > 0 && `▲`}
-        </div>
+        
+        {/* Status Badge */}
+        {hasPendingClaim && (
+          <div style={{
+            background: COLORS.accent,
+            color: 'white',
+            padding: '6px 12px',
+            borderRadius: '12px',
+            fontSize: '12px',
+            fontWeight: '700',
+          }}>
+            ⏳ Pending Review
+          </div>
+        )}
+        {isVerified && (
+          <div style={{
+            background: COLORS.primary,
+            color: 'white',
+            padding: '6px 12px',
+            borderRadius: '12px',
+            fontSize: '12px',
+            fontWeight: '700',
+          }}>
+            ✓ Approved!
+          </div>
+        )}
+        {needsRedo && (
+          <div style={{
+            background: '#E74C3C',
+            color: 'white',
+            padding: '6px 12px',
+            borderRadius: '12px',
+            fontSize: '12px',
+            fontWeight: '700',
+          }}>
+            🔄 Try Again
+          </div>
+        )}
+        {!hasPendingClaim && !isVerified && !needsRedo && (
+          <div style={{
+            background: COLORS.primary,
+            color: 'white',
+            padding: '4px 12px',
+            borderRadius: '12px',
+            fontSize: '14px',
+            fontWeight: '600',
+          }}>
+            +{task.pointsDone}pt {task.pointsExtraWellDone > 0 && `▲`}
+          </div>
+        )}
       </div>
 
+      {/* Redo Note */}
+      {needsRedo && claim.redoNote && (
+        <div style={{
+          padding: '12px 16px',
+          background: '#FFCDD2',
+          borderTop: '1px solid #E74C3C',
+        }}>
+          <div style={{ fontSize: '12px', fontWeight: '700', color: '#C0392B', marginBottom: '4px' }}>
+            Parent's Note:
+          </div>
+          <div style={{ fontSize: '14px', color: '#C0392B' }}>
+            {claim.redoNote}
+          </div>
+        </div>
+      )}
+
       {/* Expanded Content */}
-      {isExpanded && (
+      {isExpanded && !hasPendingClaim && !isVerified && (
         <div style={{ padding: '0 16px 16px', background: COLORS.backgroundLight }}>
           {/* Tips */}
           {tips.length > 0 && (

@@ -1,113 +1,257 @@
-import { Button, Card, Badge } from '../common';
+import { useState } from 'react';
+import { Card, Button } from '../common';
 import { COLORS } from '../../utils/constants';
 
 /**
- * PendingClaimsList - Shows tasks awaiting parent verification
- * Preserves exact styling from original ParentView
- * 
- * @param {Array} claims - Array of pending claim objects
- * @param {Function} onApprove - Callback when claim is approved
- * @param {Function} onApproveExtra - Callback when claim is approved with bonus
- * @param {Function} onRequestRedo - Callback when redo is requested
- * @param {boolean} readOnly - If true, disables all actions (for delivery_parent without permissions)
+ * PendingClaimsList - Display and manage pending task claims
+ * Allows parents to approve as "Done" or "Extra Well Done", or request redo
  */
-export default function PendingClaimsList({ 
-  claims, 
-  onApprove, 
-  onApproveExtra, 
-  onRequestRedo,
-  readOnly = false 
-}) {
-  if (claims.length === 0) {
+export default function PendingClaimsList({ claims, onVerify, loading }) {
+  const [verifying, setVerifying] = useState(null);
+  const [redoNote, setRedoNote] = useState('');
+  const [showRedoInput, setShowRedoInput] = useState(null);
+
+  const handleApprove = async (claimId, approvalType) => {
+    setVerifying(claimId);
+    try {
+      await onVerify(claimId, { status: 'verified', approvalType });
+    } finally {
+      setVerifying(null);
+    }
+  };
+
+  const handleRequestRedo = async (claimId) => {
+    setVerifying(claimId);
+    try {
+      await onVerify(claimId, { 
+        status: 'redo_requested', 
+        redoNote: redoNote || 'Please try again' 
+      });
+      setRedoNote('');
+      setShowRedoInput(null);
+    } finally {
+      setVerifying(null);
+    }
+  };
+
+  if (loading) {
     return (
-      <Card>
-        <div style={{ textAlign: 'center', padding: '20px' }}>
-          <div style={{ fontSize: '48px', marginBottom: '12px' }}>✅</div>
-          <div style={{ fontSize: '16px', fontWeight: '600', color: COLORS.textPrimary }}>
-            All caught up!
-          </div>
-          <div style={{ fontSize: '14px', color: COLORS.textSecondary, marginTop: '4px' }}>
-            No tasks awaiting verification
-          </div>
-        </div>
-      </Card>
+      <div style={{ textAlign: 'center', padding: '40px', color: COLORS.textSecondary }}>
+        Loading pending claims...
+      </div>
+    );
+  }
+
+  if (!claims || claims.length === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+        <div style={{ fontSize: '64px', marginBottom: '16px' }}>✓</div>
+        <h3 style={{ fontSize: '18px', fontWeight: '600', color: COLORS.textPrimary, marginBottom: '8px' }}>
+          No pending claims
+        </h3>
+        <p style={{ fontSize: '14px', color: COLORS.textSecondary }}>
+          When your child completes a task, it will show up here for you to verify.
+        </p>
+      </div>
     );
   }
 
   return (
     <div>
-      <div style={{ 
-        fontSize: '18px', 
-        fontWeight: '700', 
-        color: COLORS.textPrimary,
-        marginBottom: '16px',
-      }}>
-        Pending Verification ({claims.length})
+      <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px', color: COLORS.textPrimary }}>
+        Pending Claims ({claims.length})
+      </h2>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {claims.map(claim => (
+          <ClaimCard
+            key={claim.id}
+            claim={claim}
+            onApprove={handleApprove}
+            onRequestRedo={handleRequestRedo}
+            verifying={verifying === claim.id}
+            showRedoInput={showRedoInput === claim.id}
+            setShowRedoInput={setShowRedoInput}
+            redoNote={redoNote}
+            setRedoNote={setRedoNote}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ClaimCard({ 
+  claim, 
+  onApprove, 
+  onRequestRedo, 
+  verifying, 
+  showRedoInput, 
+  setShowRedoInput,
+  redoNote,
+  setRedoNote 
+}) {
+  const task = claim.task;
+  const isExtraWellDone = claim.claimType === 'extra_well_done';
+  const pointsAwarded = isExtraWellDone ? task.pointsExtraWellDone : task.pointsDone;
+
+  return (
+    <Card style={{
+      padding: '20px',
+      borderLeft: `4px solid ${isExtraWellDone ? COLORS.accent : COLORS.primary}`,
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '16px' }}>
+        <div style={{ fontSize: '40px', flexShrink: 0 }}>
+          {task.icon || '📋'}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: COLORS.textPrimary }}>
+              {task.title}
+            </h3>
+            {isExtraWellDone && (
+              <span style={{
+                background: COLORS.accent,
+                color: 'white',
+                padding: '2px 8px',
+                borderRadius: '12px',
+                fontSize: '11px',
+                fontWeight: '700',
+              }}>
+                ⭐ EXTRA WELL DONE
+              </span>
+            )}
+          </div>
+          <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: COLORS.textSecondary }}>
+            {claim.childProfile?.name || claim.child?.name} • {new Date(claim.claimedAt).toLocaleString()}
+          </p>
+        </div>
+        <div style={{
+          background: COLORS.backgroundLight,
+          padding: '8px 16px',
+          borderRadius: '12px',
+          textAlign: 'center',
+        }}>
+          <div style={{ fontSize: '20px', fontWeight: '700', color: COLORS.primary }}>
+            +{pointsAwarded}
+          </div>
+          <div style={{ fontSize: '11px', color: COLORS.textSecondary, fontWeight: '600' }}>
+            POINTS
+          </div>
+        </div>
       </div>
 
-      {claims.map(claim => (
-        <Card key={claim.id} style={{ marginBottom: '12px' }}>
-          {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-            <span style={{ fontSize: '32px' }}>{claim.task.icon}</span>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: '700', fontSize: '16px', color: COLORS.textPrimary }}>
-                {claim.task.label}
-              </div>
-              <div style={{ fontSize: '13px', color: COLORS.textSecondary }}>
-                {claim.childName} • {claim.submittedAt}
-              </div>
-            </div>
-            <Badge variant="warning" size="small">
-              {claim.submittedQuality === 'extraWellDone' ? '⭐ Extra' : '✓ Done'}
-            </Badge>
-          </div>
+      {/* Standards */}
+      <div style={{
+        background: COLORS.backgroundLight,
+        padding: '12px',
+        borderRadius: '12px',
+        marginBottom: '16px',
+      }}>
+        <div style={{ fontSize: '12px', fontWeight: '700', color: COLORS.textSecondary, marginBottom: '8px' }}>
+          {isExtraWellDone ? '⭐ EXTRA WELL DONE STANDARD:' : '✓ DONE STANDARD:'}
+        </div>
+        <p style={{ margin: 0, fontSize: '14px', color: COLORS.textPrimary, lineHeight: '1.5' }}>
+          {isExtraWellDone ? task.extraWellDoneStandard : task.doneStandard}
+        </p>
+      </div>
 
-          {/* Quality Details */}
-          <div style={{
-            padding: '12px',
-            background: COLORS.background,
-            borderRadius: '8px',
-            marginBottom: '12px',
-            fontSize: '14px',
-            color: COLORS.textSecondary,
-          }}>
-            {claim.submittedQuality === 'extraWellDone' 
-              ? claim.task.extraWellDone 
-              : claim.task.done
-            }
-          </div>
-
-          {/* Action Buttons */}
-          {!readOnly && (
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <Button
-                variant="success"
-                onClick={() => onApprove(claim.id)}
-                style={{ flex: 1 }}
-              >
-                ✓ Approve ({claim.task.pts} pts)
-              </Button>
-              {claim.submittedQuality === 'done' && (
-                <Button
-                  variant="primary"
-                  onClick={() => onApproveExtra(claim.id)}
-                  style={{ flex: 1 }}
-                >
-                  ⭐ Extra ({Math.round(claim.task.pts * 1.5)} pts)
-                </Button>
-              )}
-              <Button
-                variant="danger"
-                onClick={() => onRequestRedo(claim.id)}
-                style={{ padding: '12px 16px' }}
-              >
-                Redo
-              </Button>
-            </div>
+      {/* Actions */}
+      {!showRedoInput ? (
+        <div style={{ display: 'flex', gap: '12px' }}>
+          {isExtraWellDone && (
+            <Button
+              onClick={() => onApprove(claim.id, 'extra_well_done')}
+              disabled={verifying}
+              style={{
+                flex: 1,
+                background: COLORS.accent,
+                padding: '14px',
+                fontSize: '15px',
+                fontWeight: '700',
+              }}
+            >
+              {verifying ? 'Approving...' : `⭐ Approve Extra Well Done`}
+            </Button>
           )}
-        </Card>
-      ))}
-    </div>
+          <Button
+            onClick={() => onApprove(claim.id, 'done')}
+            disabled={verifying}
+            style={{
+              flex: 1,
+              background: COLORS.primary,
+              padding: '14px',
+              fontSize: '15px',
+              fontWeight: '700',
+            }}
+          >
+            {verifying ? 'Approving...' : `✓ Approve as Done`}
+          </Button>
+          <Button
+            onClick={() => setShowRedoInput(claim.id)}
+            disabled={verifying}
+            style={{
+              background: '#FFE5E5',
+              color: '#C0392B',
+              padding: '14px 20px',
+              fontSize: '15px',
+              fontWeight: '700',
+            }}
+          >
+            ✗ Send Back
+          </Button>
+        </div>
+      ) : (
+        <div>
+          <textarea
+            value={redoNote}
+            onChange={(e) => setRedoNote(e.target.value)}
+            placeholder="Optional: Let them know what needs improvement..."
+            style={{
+              width: '100%',
+              padding: '12px',
+              border: `2px solid ${COLORS.borderLight}`,
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontFamily: 'inherit',
+              resize: 'vertical',
+              minHeight: '80px',
+              marginBottom: '12px',
+            }}
+          />
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <Button
+              onClick={() => onRequestRedo(claim.id)}
+              disabled={verifying}
+              style={{
+                flex: 1,
+                background: '#C0392B',
+                padding: '12px',
+                fontSize: '14px',
+                fontWeight: '700',
+              }}
+            >
+              {verifying ? 'Sending...' : 'Send Back to Redo'}
+            </Button>
+            <Button
+              onClick={() => {
+                setShowRedoInput(null);
+                setRedoNote('');
+              }}
+              disabled={verifying}
+              style={{
+                background: COLORS.backgroundLight,
+                color: COLORS.textSecondary,
+                padding: '12px 20px',
+                fontSize: '14px',
+                fontWeight: '700',
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+    </Card>
   );
 }

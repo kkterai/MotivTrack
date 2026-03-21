@@ -15,7 +15,7 @@ export default function App() {
   const { user, token, login, register, isLoading, error } = useAuthStore();
   const isAuthenticated = token !== null && user !== null;
 
-  console.log('App rendering - isAuthenticated:', isAuthenticated, 'user:', user);
+  console.log('[App] Rendering - token:', token, 'user:', user, 'isAuthenticated:', isAuthenticated);
 
   return (
     <BrowserRouter>

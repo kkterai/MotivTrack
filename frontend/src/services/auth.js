@@ -65,6 +65,13 @@ export const authService = {
   },
 
   /**
+   * Get stored auth token
+   */
+  getStoredToken() {
+    return localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+  },
+
+  /**
    * Check if user is authenticated
    */
   isAuthenticated() {

@@ -4,7 +4,7 @@ import { authService } from '../services/auth';
 export const useAuthStore = create((set, get) => ({
   // State
   user: authService.getStoredUser(),
-  token: authService.isAuthenticated(),
+  token: authService.getStoredToken(),
   isLoading: false,
   error: null,
 

@@ -5,21 +5,21 @@ import { COLORS } from '../../utils/constants';
 /**
  * RewardManagement - Interface for creating and editing rewards
  * Only available to admin_parent
- * 
+ *
  * @param {Array} rewards - Array of reward objects
  * @param {Function} onAddReward - Callback when new reward is created
  * @param {Function} onEditReward - Callback when reward is edited
- * @param {Function} onRetireReward - Callback when reward is retired
+ * @param {Function} onArchiveReward - Callback when reward is archived
  */
-export default function RewardManagement({ rewards, onAddReward, onEditReward, onRetireReward }) {
+export default function RewardManagement({ rewards, onAddReward, onEditReward, onArchiveReward }) {
   const [showModal, setShowModal] = useState(false);
   const [editingReward, setEditingReward] = useState(null);
   const [formData, setFormData] = useState({
-    label: '',
+    title: '',
     icon: '🎁',
-    pts: 10,
+    pointsCost: 10,
     category: '',
-    buyLink: '',
+    shoppingLink: '',
     needsScheduling: false,
   });
 
@@ -27,21 +27,21 @@ export default function RewardManagement({ rewards, onAddReward, onEditReward, o
     if (reward) {
       setEditingReward(reward);
       setFormData({
-        label: reward.label,
-        icon: reward.icon,
-        pts: reward.pts,
+        title: reward.title || '',
+        icon: reward.icon || '🎁',
+        pointsCost: reward.pointsCost || 10,
         category: reward.category || '',
-        buyLink: reward.buyLink || '',
+        shoppingLink: reward.shoppingLink || '',
         needsScheduling: reward.needsScheduling || false,
       });
     } else {
       setEditingReward(null);
       setFormData({
-        label: '',
+        title: '',
         icon: '🎁',
-        pts: 10,
+        pointsCost: 10,
         category: '',
-        buyLink: '',
+        shoppingLink: '',
         needsScheduling: false,
       });
     }
@@ -91,14 +91,14 @@ export default function RewardManagement({ rewards, onAddReward, onEditReward, o
         rewards.map(reward => (
           <Card key={reward.id} style={{ marginBottom: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontSize: '40px' }}>{reward.icon}</span>
+              <span style={{ fontSize: '40px' }}>{reward.icon || '🎁'}</span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: '700', fontSize: '16px', color: COLORS.textPrimary, marginBottom: '4px' }}>
-                  {reward.label}
+                  {reward.title}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Badge variant="primary" size="small">
-                    {reward.pts} points
+                    {reward.pointsCost} points
                   </Badge>
                   {reward.category && (
                     <Badge variant="default" size="small">
@@ -122,7 +122,7 @@ export default function RewardManagement({ rewards, onAddReward, onEditReward, o
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => onRetireReward(reward.id)}
+                  onClick={() => onArchiveReward(reward.id)}
                   style={{ padding: '8px 16px', fontSize: '14px' }}
                 >
                   Retire
@@ -143,10 +143,10 @@ export default function RewardManagement({ rewards, onAddReward, onEditReward, o
             <Button variant="outline" onClick={() => setShowModal(false)}>
               Cancel
             </Button>
-            <Button 
-              variant="primary" 
+            <Button
+              variant="primary"
               onClick={handleSubmit}
-              disabled={!formData.label.trim()}
+              disabled={!formData.title || !formData.title.trim()}
             >
               {editingReward ? 'Save Changes' : 'Add Reward'}
             </Button>
@@ -156,8 +156,8 @@ export default function RewardManagement({ rewards, onAddReward, onEditReward, o
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <Input
             label="Reward Name"
-            value={formData.label}
-            onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             placeholder="e.g., Pizza Night"
             required
           />
@@ -173,8 +173,8 @@ export default function RewardManagement({ rewards, onAddReward, onEditReward, o
             <Input
               label="Points Cost"
               type="number"
-              value={formData.pts}
-              onChange={(e) => setFormData({ ...formData, pts: parseInt(e.target.value) || 10 })}
+              value={formData.pointsCost}
+              onChange={(e) => setFormData({ ...formData, pointsCost: parseInt(e.target.value) || 10 })}
               placeholder="10"
               style={{ width: '120px' }}
             />
@@ -188,9 +188,9 @@ export default function RewardManagement({ rewards, onAddReward, onEditReward, o
           />
 
           <Input
-            label="Buy Link (Optional)"
-            value={formData.buyLink}
-            onChange={(e) => setFormData({ ...formData, buyLink: e.target.value })}
+            label="Shopping Link (Optional)"
+            value={formData.shoppingLink}
+            onChange={(e) => setFormData({ ...formData, shoppingLink: e.target.value })}
             placeholder="https://..."
           />
 

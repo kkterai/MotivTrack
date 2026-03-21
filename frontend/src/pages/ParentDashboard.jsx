@@ -5,10 +5,10 @@ import { useTaskStore } from '../stores/useTaskStore';
 import { useRewardStore } from '../stores/useRewardStore';
 import { useNotificationStore } from '../stores/useNotificationStore';
 import { childProfileService } from '../services/childProfiles';
+import { claimService } from '../services/claims';
 import { COLORS } from '../utils/constants';
 import { Button, Card, Input } from '../components/common';
-import TaskManagement from '../components/parent/TaskManagement';
-import RewardManagement from '../components/parent/RewardManagement';
+import { PendingClaimsList, TaskManagement, RewardManagement } from '../components/parent';
 
 /**
  * ParentDashboard - Main dashboard for parent users
@@ -25,6 +25,8 @@ export default function ParentDashboard() {
   const [loading, setLoading] = useState(true);
   const [childProfiles, setChildProfiles] = useState([]);
   const [selectedChild, setSelectedChild] = useState(null);
+  const [pendingClaims, setPendingClaims] = useState([]);
+  const [claimsLoading, setClaimsLoading] = useState(false);
 
   // Load data on mount and check onboarding status
   useEffect(() => {
@@ -74,6 +76,25 @@ export default function ParentDashboard() {
 
     loadData();
   }, [user, navigate, fetchNotifications]);
+
+  // Fetch pending claims when user loads
+  useEffect(() => {
+    const loadPendingClaims = async () => {
+      if (!user?.id) return;
+      
+      try {
+        setClaimsLoading(true);
+        const response = await claimService.getPendingClaims();
+        setPendingClaims(response.data || []);
+      } catch (error) {
+        console.error('[ParentDashboard] Error loading pending claims:', error);
+      } finally {
+        setClaimsLoading(false);
+      }
+    };
+
+    loadPendingClaims();
+  }, [user]);
 
   // Fetch tasks and rewards when selected child changes
   useEffect(() => {
@@ -128,6 +149,25 @@ export default function ParentDashboard() {
   const handleDeleteReward = async (rewardId) => {
     // Note: deleteReward is not in the store, so we'll need to handle this differently
     console.warn('[ParentDashboard] Delete reward not implemented yet');
+  };
+
+  const handleVerifyClaim = async (claimId, verificationData) => {
+    try {
+      await claimService.verifyClaim(claimId, verificationData);
+      
+      // Refresh pending claims
+      const response = await claimService.getPendingClaims();
+      setPendingClaims(response.data || []);
+      
+      // Refresh tasks and notifications
+      if (selectedChild) {
+        await fetchTasks(selectedChild);
+      }
+      await fetchNotifications();
+    } catch (error) {
+      console.error('[ParentDashboard] Error verifying claim:', error);
+      alert('Failed to verify claim. Please try again.');
+    }
   };
 
   if (loading) {
@@ -260,7 +300,13 @@ export default function ParentDashboard() {
         margin: '0 auto',
         padding: '20px',
       }}>
-        {activeTab === 'verify' && <VerifyTab />}
+        {activeTab === 'verify' && (
+          <PendingClaimsList
+            claims={pendingClaims}
+            onVerify={handleVerifyClaim}
+            loading={claimsLoading}
+          />
+        )}
         {activeTab === 'inbox' && <InboxTab />}
         {activeTab === 'school' && <SchoolTab />}
         {activeTab === 'tasks' && (
@@ -279,23 +325,6 @@ export default function ParentDashboard() {
             onArchiveReward={handleDeleteReward}
           />
         )}
-      </div>
-    </div>
-  );
-}
-
-// Verify Tab - Pending claims
-function VerifyTab() {
-  return (
-    <div>
-      <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px', color: COLORS.textPrimary }}>
-        Pending Claims
-      </h2>
-      <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-        <div style={{ fontSize: '64px', marginBottom: '16px' }}>✓</div>
-        <p style={{ fontSize: '16px', color: COLORS.textSecondary }}>
-          No pending claims to verify
-        </p>
       </div>
     </div>
   );
