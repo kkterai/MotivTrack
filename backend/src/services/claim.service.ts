@@ -388,8 +388,6 @@ export class ClaimService {
    * Get pending claims for a parent to review
    */
   static async getPendingClaimsForParent(parentId: string) {
-    console.log('getPendingClaimsForParent called for parentId:', parentId);
-    
     // Get all child profiles where this user is admin or delivery parent
     const childProfiles = await prisma.childProfile.findMany({
       where: {
@@ -399,8 +397,6 @@ export class ClaimService {
         ],
       },
     });
-
-    console.log('Found child profiles:', childProfiles.map(cp => ({ id: cp.id, name: cp.name })));
 
     const childProfileIds = childProfiles.map(cp => cp.id);
 
@@ -428,13 +424,6 @@ export class ClaimService {
         claimedAt: 'asc',
       },
     });
-
-    console.log('Found pending claims:', pendingClaims.length, pendingClaims.map(c => ({
-      id: c.id,
-      taskTitle: c.task.title,
-      childName: c.childProfile.name,
-      status: c.status
-    })));
 
     return pendingClaims;
   }

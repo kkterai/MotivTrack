@@ -85,7 +85,11 @@ export default function ParentDashboard() {
       try {
         setClaimsLoading(true);
         const response = await claimService.getPendingClaims();
-        setPendingClaims(response.data || []);
+        // The API interceptor returns response.data, and the claims service returns response.data
+        // So we get { success: true, data: [...claims] }
+        // But if response is already an array, use it directly
+        const claims = Array.isArray(response) ? response : (response.data || []);
+        setPendingClaims(claims);
       } catch (error) {
         console.error('[ParentDashboard] Error loading pending claims:', error);
       } finally {
@@ -94,7 +98,7 @@ export default function ParentDashboard() {
     };
 
     loadPendingClaims();
-  }, [user]);
+  }, [user, childProfiles]);
 
   // Fetch tasks and rewards when selected child changes
   useEffect(() => {
@@ -157,7 +161,8 @@ export default function ParentDashboard() {
       
       // Refresh pending claims
       const response = await claimService.getPendingClaims();
-      setPendingClaims(response.data || []);
+      const claims = Array.isArray(response) ? response : (response.data || []);
+      setPendingClaims(claims);
       
       // Refresh tasks and notifications
       if (selectedChild) {
