@@ -45,7 +45,7 @@ export default function ChildDashboard() {
     let currentInterval = 15000; // Start with 15 seconds
     const MAX_INTERVAL = 60000; // Max 60 seconds
     const MIN_INTERVAL = 15000; // Min 15 seconds
-    let previousData = null;
+    let previousDataJson = '';
     
     const loadData = async () => {
       // Skip if tab is not visible
@@ -66,10 +66,18 @@ export default function ChildDashboard() {
         // Update profile
         setChildProfile(profileResponse);
         
-        // Update welcome bonus
-        const welcomeBonus = historyResponse.find(tx => tx.source === 'welcome_bonus');
-        if (welcomeBonus) {
-          setWelcomeBonusAmount(welcomeBonus.amount);
+        // Update welcome bonus - get the parent's welcome bonus (oldest transaction)
+        const welcomeBonusTransactions = historyResponse.filter(tx => tx.source === 'welcome_bonus');
+        
+        // Sort by createdAt ascending (oldest first) - first one is from parent during onboarding
+        const sortedBonuses = welcomeBonusTransactions.sort((a, b) =>
+          new Date(a.createdAt) - new Date(b.createdAt)
+        );
+        
+        if (sortedBonuses.length > 0) {
+          // First bonus (oldest) is from parent, rest are from MotivTrack
+          const parentBonus = sortedBonuses[0].amount;
+          setWelcomeBonusAmount(parentBonus);
         }
         
         // Fetch tasks, balance, rewards, notifications
@@ -79,34 +87,37 @@ export default function ChildDashboard() {
         fetchNotifications();
         
         // Check if data changed
-        const currentData = JSON.stringify({ claims, balance: totalPoints });
-        const dataChanged = currentData !== previousData;
-        previousData = currentData;
+        const currentDataJson = JSON.stringify({ claims, balance: totalPoints });
+        const dataChanged = currentDataJson !== previousDataJson;
         
         if (dataChanged) {
+          previousDataJson = currentDataJson;
+          
           // Reset to minimum interval when changes detected
-          currentInterval = MIN_INTERVAL;
-          resetPollInterval();
+          if (currentInterval !== MIN_INTERVAL) {
+            currentInterval = MIN_INTERVAL;
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = setInterval(loadData, currentInterval);
+          }
         } else {
           // Gradually increase interval when no changes (exponential backoff)
-          currentInterval = Math.min(currentInterval * 1.5, MAX_INTERVAL);
-          resetPollInterval();
+          const newInterval = Math.min(currentInterval * 1.5, MAX_INTERVAL);
+          if (newInterval !== currentInterval) {
+            currentInterval = newInterval;
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = setInterval(loadData, currentInterval);
+          }
         }
       } catch (error) {
         console.error('Error loading child dashboard data:', error);
       }
     };
     
-    const resetPollInterval = () => {
-      if (pollInterval) clearInterval(pollInterval);
-      pollInterval = setInterval(loadData, currentInterval);
-    };
-    
     // Load data immediately
     loadData();
     
     // Start polling
-    resetPollInterval();
+    pollInterval = setInterval(loadData, currentInterval);
     
     // Pause polling when tab is hidden, resume when visible
     const handleVisibilityChange = () => {
@@ -114,7 +125,8 @@ export default function ChildDashboard() {
         if (pollInterval) clearInterval(pollInterval);
       } else {
         currentInterval = MIN_INTERVAL; // Reset to min when tab becomes visible
-        resetPollInterval();
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(loadData, currentInterval);
         loadData(); // Immediate check when tab becomes visible
       }
     };
@@ -185,12 +197,12 @@ export default function ChildDashboard() {
 
   return (
     <div style={{ minHeight: '100vh', background: COLORS.background }}>
-      {/* Welcome Banner */}
-      {showWelcomeBanner && childProfile && (
+      {/* Welcome Banner - only show when profile is loaded */}
+      {showWelcomeBanner && childProfile && childProfile.adminParent && (
         <WelcomeBanner
           totalPoints={totalPoints}
           welcomeBonusAmount={welcomeBonusAmount}
-          parentReference={childProfile.adminParent?.parentReference || childProfile.adminParent?.name || 'your parent'}
+          parentReference={childProfile.adminParent.parentReference || childProfile.adminParent.name || 'your parent'}
           onDismiss={handleDismissWelcomeBanner}
         />
       )}

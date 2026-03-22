@@ -77,6 +77,7 @@ export default function ParentDashboard() {
     let currentInterval = 10000; // Start with 10 seconds
     const MAX_INTERVAL = 30000; // Max 30 seconds
     const MIN_INTERVAL = 10000; // Min 10 seconds
+    let previousClaimsJson = '';
     
     const loadPendingClaims = async () => {
       // Skip if user is interacting or tab is not visible
@@ -86,36 +87,42 @@ export default function ParentDashboard() {
         const response = await claimService.getPendingClaims();
         const claims = Array.isArray(response) ? response : (response.data || []);
         
-        // Only update if claims have actually changed
-        const claimsChanged = JSON.stringify(claims) !== JSON.stringify(pendingClaims);
+        // Compare with previous state
+        const currentClaimsJson = JSON.stringify(claims);
+        const claimsChanged = currentClaimsJson !== previousClaimsJson;
+        
         if (claimsChanged) {
+          previousClaimsJson = currentClaimsJson;
           setPendingClaims(claims);
+          
           // Reset to minimum interval when changes detected
-          currentInterval = MIN_INTERVAL;
-          resetPollInterval();
+          if (currentInterval !== MIN_INTERVAL) {
+            currentInterval = MIN_INTERVAL;
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = setInterval(loadPendingClaims, currentInterval);
+          }
         } else {
           // Gradually increase interval when no changes (exponential backoff)
-          currentInterval = Math.min(currentInterval * 1.5, MAX_INTERVAL);
-          resetPollInterval();
+          const newInterval = Math.min(currentInterval * 1.5, MAX_INTERVAL);
+          if (newInterval !== currentInterval) {
+            currentInterval = newInterval;
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = setInterval(loadPendingClaims, currentInterval);
+          }
         }
       } catch (error) {
         console.error('Error loading pending claims:', error);
       }
     };
 
-    const resetPollInterval = () => {
-      if (pollInterval) clearInterval(pollInterval);
-      pollInterval = setInterval(loadPendingClaims, currentInterval);
-    };
-
     // Initial load
-    if (!isInteracting) {
+    if (!isInteracting && user?.id) {
       setClaimsLoading(true);
       loadPendingClaims().finally(() => setClaimsLoading(false));
     }
     
     // Start polling
-    resetPollInterval();
+    pollInterval = setInterval(loadPendingClaims, currentInterval);
     
     // Pause polling when tab is hidden, resume when visible
     const handleVisibilityChange = () => {
@@ -123,7 +130,8 @@ export default function ParentDashboard() {
         if (pollInterval) clearInterval(pollInterval);
       } else {
         currentInterval = MIN_INTERVAL; // Reset to min when tab becomes visible
-        resetPollInterval();
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(loadPendingClaims, currentInterval);
         loadPendingClaims(); // Immediate check when tab becomes visible
       }
     };
@@ -134,7 +142,7 @@ export default function ParentDashboard() {
       if (pollInterval) clearInterval(pollInterval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [user, childProfiles, isInteracting, pendingClaims]);
+  }, [user, childProfiles, isInteracting]);
 
   // Fetch tasks and rewards when selected child changes
   useEffect(() => {

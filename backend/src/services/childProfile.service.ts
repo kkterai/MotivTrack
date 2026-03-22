@@ -107,6 +107,7 @@ export class ChildProfileService {
             name: true,
             email: true,
             role: true,
+            parentReference: true,
           },
         },
         deliveryParent: {
@@ -115,6 +116,7 @@ export class ChildProfileService {
             name: true,
             email: true,
             role: true,
+            parentReference: true,
           },
         },
         streakRecord: true,
