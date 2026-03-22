@@ -10,6 +10,7 @@ export interface AuthUser {
   email: string;
   role: Role;
   name?: string;
+  parentReference?: string;
 }
 
 export interface AuthRequest extends Request {
