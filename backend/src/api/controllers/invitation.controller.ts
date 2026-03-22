@@ -22,10 +22,10 @@ export class InvitationController {
       // Generate formatted email text for parent to send
       let emailText = null;
       if (role === 'child' && childName) {
-        const parentName = req.user!.name || 'Your parent';
+        const parentReference = req.user!.parentReference || req.user!.name || 'Your parent';
         emailText = InvitationService.generateInvitationEmailText(
           childName,
-          parentName,
+          parentReference,
           invitation.token
         );
       }

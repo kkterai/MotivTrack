@@ -60,7 +60,7 @@ export class AuthController {
   static async getProfile(req: Request, res: Response) {
     try {
       // User is attached by auth middleware
-      const userId = (req as any).user.userId;
+      const userId = (req as any).user.id;
 
       const user = await AuthService.getUserById(userId);
 
@@ -82,7 +82,7 @@ export class AuthController {
    */
   static async updatePassword(req: Request, res: Response) {
     try {
-      const userId = (req as any).user.userId;
+      const userId = (req as any).user.id;
       const { currentPassword, newPassword } = req.body;
 
       await AuthService.updatePassword(userId, currentPassword, newPassword);

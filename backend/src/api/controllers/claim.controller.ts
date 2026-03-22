@@ -8,8 +8,15 @@ export class ClaimController {
    */
   static async createClaim(req: Request, res: Response) {
     try {
-      const userId = (req as any).user.userId;
+      const userId = (req as any).user.id;
       const { taskId, childProfileId, claimType } = req.body;
+
+      console.log('ClaimController.createClaim called with:', {
+        userId,
+        taskId,
+        childProfileId,
+        claimType,
+      });
 
       const claim = await ClaimService.createClaim(
         {
@@ -20,11 +27,14 @@ export class ClaimController {
         userId
       );
 
+      console.log('Claim created successfully in controller');
+
       res.status(201).json({
         success: true,
         data: claim,
       });
     } catch (error: any) {
+      console.error('Error in ClaimController.createClaim:', error);
       res.status(400).json({
         success: false,
         error: error.message,
@@ -38,7 +48,7 @@ export class ClaimController {
    */
   static async verifyClaim(req: Request, res: Response) {
     try {
-      const userId = (req as any).user.userId;
+      const userId = (req as any).user.id;
       const { id } = req.params;
       const { status, redoNote } = req.body;
 
@@ -92,7 +102,7 @@ export class ClaimController {
    */
   static async getPendingClaims(req: Request, res: Response) {
     try {
-      const userId = (req as any).user.userId;
+      const userId = (req as any).user.id;
 
       const claims = await ClaimService.getPendingClaimsForParent(userId);
 

@@ -72,7 +72,7 @@ export class InvitationService {
    */
   static generateInvitationEmailText(
     childName: string,
-    parentName: string,
+    parentReference: string,
     token: string,
     appUrl: string = process.env.FRONTEND_URL || 'http://localhost:5173'
   ): { subject: string; body: string; link: string } {
@@ -81,7 +81,7 @@ export class InvitationService {
     const subject = `You're invited to MotivTrack!`;
     const body = `Hi ${childName}!
 
-Your parent, ${parentName}, has set up MotivTrack for you! 🎉
+${parentReference} has set up MotivTrack for you! 🎉
 
 MotivTrack helps you earn points by completing tasks and redeem them for rewards you choose. Your parent has already set up some tasks and rewards for you to get started.
 

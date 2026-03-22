@@ -35,7 +35,7 @@ Parent (Onboarding) → Backend → Child (Email & Onboarding)
 - **Purpose:** Provides structured data for frontend to display and copy separately
 
 ```typescript
-static generateInvitationEmailText(
+static (
   childName: string,
   parentName: string,
   token: string,

@@ -1,14 +1,22 @@
 import prisma from '../config/database.js';
+import { TaskCategory } from '@prisma/client';
 
 export class LibraryService {
   /**
    * Get all library tasks
+   * Auto-seeds the library if empty
    */
   static async getAllLibraryTasks(category?: string) {
+    // Check if library is empty and auto-seed if needed
+    const count = await prisma.libraryTask.count();
+    if (count === 0) {
+      await this.seedLibrary();
+    }
+
     const tasks = await prisma.libraryTask.findMany({
       where: {
         isArchived: false,
-        category: category as any,
+        ...(category ? { category: category as any } : {}),
       },
       orderBy: {
         category: 'asc',
@@ -133,7 +141,7 @@ export class LibraryService {
         ]),
         suggestedPointsDone: 2,
         suggestedPointsExtraWellDone: 3,
-        category: 'kitchen',
+        category: TaskCategory.kitchen,
       },
       {
         title: 'Take out trash',
@@ -147,7 +155,7 @@ export class LibraryService {
         ]),
         suggestedPointsDone: 1,
         suggestedPointsExtraWellDone: 2,
-        category: 'kitchen',
+        category: TaskCategory.kitchen,
       },
 
       // Bathroom tasks
@@ -163,7 +171,7 @@ export class LibraryService {
         ]),
         suggestedPointsDone: 2,
         suggestedPointsExtraWellDone: 3,
-        category: 'bathroom',
+        category: TaskCategory.bathroom,
       },
 
       // Bedroom tasks
@@ -179,7 +187,7 @@ export class LibraryService {
         ]),
         suggestedPointsDone: 1,
         suggestedPointsExtraWellDone: 2,
-        category: 'bedroom',
+        category: TaskCategory.bedroom,
       },
       {
         title: 'Tidy bedroom',
@@ -193,7 +201,7 @@ export class LibraryService {
         ]),
         suggestedPointsDone: 2,
         suggestedPointsExtraWellDone: 3,
-        category: 'bedroom',
+        category: TaskCategory.bedroom,
       },
 
       // Laundry tasks
@@ -209,7 +217,7 @@ export class LibraryService {
         ]),
         suggestedPointsDone: 2,
         suggestedPointsExtraWellDone: 3,
-        category: 'laundry',
+        category: TaskCategory.laundry,
       },
 
       // Outdoor tasks
@@ -225,7 +233,7 @@ export class LibraryService {
         ]),
         suggestedPointsDone: 1,
         suggestedPointsExtraWellDone: 2,
-        category: 'outdoor',
+        category: TaskCategory.outdoor,
       },
 
       // General tasks
@@ -241,7 +249,7 @@ export class LibraryService {
         ]),
         suggestedPointsDone: 3,
         suggestedPointsExtraWellDone: 4,
-        category: 'general',
+        category: TaskCategory.general,
       },
       {
         title: 'Feed the pet',
@@ -255,7 +263,7 @@ export class LibraryService {
         ]),
         suggestedPointsDone: 1,
         suggestedPointsExtraWellDone: 2,
-        category: 'general',
+        category: TaskCategory.general,
       },
     ];
 
@@ -263,6 +271,7 @@ export class LibraryService {
     const existingCount = await prisma.libraryTask.count();
 
     if (existingCount > 0) {
+      console.log('Library already seeded with', existingCount, 'tasks');
       return {
         message: 'Library already seeded',
         count: existingCount,
@@ -274,6 +283,7 @@ export class LibraryService {
       data: libraryTasks,
     });
 
+    console.log('Library seeded successfully with', created.count, 'tasks');
     return {
       message: 'Library seeded successfully',
       count: created.count,

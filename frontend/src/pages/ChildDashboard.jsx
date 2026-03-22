@@ -47,7 +47,7 @@ export default function ChildDashboard() {
       fetchTasks(user.childProfileId);
       fetchBalance(user.childProfileId);
       fetchRewards(user.childProfileId);
-      fetchNotifications(user.id);
+      fetchNotifications(); // No userId needed - uses authenticated user from token
       
       // Fetch task claims to show status
       claimService.getClaimsByChild(user.childProfileId)
@@ -92,18 +92,21 @@ export default function ChildDashboard() {
 
   const handleTaskSubmit = async (taskId, quality) => {
     setSubmitting(true);
+    console.log('handleTaskSubmit called with:', { taskId, quality, user });
     try {
       // Submit task claim
-      await claimService.createClaim({
+      const claimData = {
         taskId,
         childProfileId: user.childProfileId,
         claimType: quality,
-      });
+      };
+      console.log('Submitting claim with data:', claimData);
+      await claimService.createClaim(claimData);
       
       // Refresh data
       await Promise.all([
         fetchTasks(user.childProfileId),
-        fetchNotifications(user.id),
+        fetchNotifications(), // No userId needed
       ]);
       
       // Refresh claims
@@ -127,7 +130,7 @@ export default function ChildDashboard() {
       await Promise.all([
         fetchBalance(user.childProfileId),
         fetchRewards(user.childProfileId),
-        fetchNotifications(user.id),
+        fetchNotifications(), // No userId needed
       ]);
     } catch (error) {
       console.error('Error redeeming reward:', error);

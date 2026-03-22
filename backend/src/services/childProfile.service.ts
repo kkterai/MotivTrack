@@ -1,5 +1,6 @@
 import prisma from '../config/database.js';
 import { PointService } from './point.service.js';
+import { SeedService } from './seed.service.js';
 
 interface CreateChildProfileDTO {
   name: string;
@@ -78,6 +79,16 @@ export class ChildProfileService {
         lastCompletedDate: null,
       },
     });
+
+    // Seed default tasks and rewards
+    console.log('[ChildProfileService.createChildProfile] Seeding default tasks and rewards');
+    try {
+      await SeedService.seedDefaultData(childProfile.id, adminParentId);
+      console.log('[ChildProfileService.createChildProfile] Successfully seeded default data');
+    } catch (seedError) {
+      console.error('[ChildProfileService.createChildProfile] Error seeding default data:', seedError);
+      // Don't fail the entire operation if seeding fails
+    }
 
     console.log('[ChildProfileService.createChildProfile] Returning child profile:', childProfile);
     return childProfile;
@@ -290,7 +301,9 @@ export class ChildProfileService {
       return false;
     }
 
+    // Allow access if user is the child, admin parent, or delivery parent
     return (
+      childProfile.childUserId === userId ||
       childProfile.adminParentId === userId ||
       childProfile.deliveryParentId === userId
     );

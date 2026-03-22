@@ -5,8 +5,15 @@ export const claimService = {
    * Create a new claim (child marks task complete)
    */
   async createClaim(data) {
-    const response = await api.post('/claims', data);
-    return response.data;
+    console.log('claimService.createClaim called with:', data);
+    try {
+      const response = await api.post('/claims', data);
+      console.log('claimService.createClaim response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('claimService.createClaim error:', error.response?.data || error.message);
+      throw error;
+    }
   },
 
   /**

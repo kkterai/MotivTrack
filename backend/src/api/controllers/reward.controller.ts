@@ -76,7 +76,7 @@ export class RewardController {
    */
   static async updateReward(req: Request, res: Response) {
     try {
-      const userId = (req as any).user.userId;
+      const userId = (req as any).user.id;
       const { id } = req.params;
       const updateData = req.body;
 
@@ -100,7 +100,7 @@ export class RewardController {
    */
   static async redeemReward(req: Request, res: Response) {
     try {
-      const userId = (req as any).user.userId;
+      const userId = (req as any).user.id;
       const { id } = req.params;
 
       const redemption = await RewardService.redeemReward(id, userId);
@@ -123,7 +123,7 @@ export class RewardController {
    */
   static async markAsDelivered(req: Request, res: Response) {
     try {
-      const userId = (req as any).user.userId;
+      const userId = (req as any).user.id;
       const { id } = req.params;
 
       const redemption = await RewardService.markAsDelivered(id, userId);
@@ -146,7 +146,7 @@ export class RewardController {
    */
   static async getPendingRedemptions(req: Request, res: Response) {
     try {
-      const userId = (req as any).user.userId;
+      const userId = (req as any).user.id;
 
       const redemptions = await RewardService.getPendingRedemptions(userId);
 
@@ -168,7 +168,7 @@ export class RewardController {
    */
   static async calculateRDT(req: Request, res: Response) {
     try {
-      const userId = (req as any).user.userId;
+      const userId = (req as any).user.id;
 
       const rdt = await RewardService.calculateRDT(userId);
 

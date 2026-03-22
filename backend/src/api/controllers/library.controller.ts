@@ -52,11 +52,12 @@ export class LibraryController {
    */
   static async seedLibrary(req: Request, res: Response) {
     try {
-      await LibraryService.seedLibrary();
+      const result = await LibraryService.seedLibrary();
 
       res.status(200).json({
         success: true,
-        message: 'Library seeded successfully',
+        message: result.message,
+        count: result.count,
       });
     } catch (error: any) {
       res.status(400).json({

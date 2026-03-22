@@ -104,7 +104,7 @@ export class TaskController {
    */
   static async updateTask(req: Request, res: Response) {
     try {
-      const userId = (req as any).user.userId;
+      const userId = (req as any).user.id;
       const { id } = req.params;
       const updateData = req.body;
 

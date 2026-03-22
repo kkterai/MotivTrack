@@ -66,6 +66,14 @@ export class AuthService {
     // Find user
     const user = await prisma.user.findUnique({
       where: { email },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        name: true,
+        parentReference: true,
+        passwordHash: true,
+      },
     });
 
     if (!user) {

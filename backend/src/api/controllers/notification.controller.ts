@@ -8,7 +8,7 @@ export class NotificationController {
    */
   static async getNotifications(req: Request, res: Response) {
     try {
-      const userId = (req as any).user.userId;
+      const userId = (req as any).user.id;
       const { limit, unreadOnly } = req.query;
 
       const notifications = await NotificationService.getNotificationsForUser(
@@ -35,7 +35,7 @@ export class NotificationController {
    */
   static async markAsOpened(req: Request, res: Response) {
     try {
-      const userId = (req as any).user.userId;
+      const userId = (req as any).user.id;
       const { id } = req.params;
 
       const notification = await NotificationService.markAsOpened(id, userId);
@@ -58,7 +58,7 @@ export class NotificationController {
    */
   static async calculateNER(req: Request, res: Response) {
     try {
-      const userId = (req as any).user.userId;
+      const userId = (req as any).user.id;
       const role = (req as any).user.role;
 
       const ner = await NotificationService.calculateNER(userId, role);

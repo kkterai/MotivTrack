@@ -8,6 +8,8 @@ export class ClaimService {
    * Create a task claim (child marks task as complete)
    */
   static async createClaim(data: CreateClaimDTO, childId: string) {
+    console.log('Creating claim with data:', { data, childId });
+    
     // Verify task exists and belongs to this child
     const task = await prisma.task.findUnique({
       where: { id: data.taskId },
@@ -21,11 +23,17 @@ export class ClaimService {
       },
     });
 
+    console.log('Task found:', task ? { id: task.id, childProfileId: task.childProfileId } : 'null');
+
     if (!task) {
       throw new Error('Task not found');
     }
 
     if (task.childProfileId !== data.childProfileId) {
+      console.error('Child profile mismatch:', {
+        taskChildProfileId: task.childProfileId,
+        dataChildProfileId: data.childProfileId
+      });
       throw new Error('Task does not belong to this child');
     }
 
@@ -37,11 +45,21 @@ export class ClaimService {
       },
     });
 
+    console.log('Existing claim check:', existingClaim ? 'Found existing claim' : 'No existing claim');
+
     if (existingClaim) {
       throw new Error('Task already has a pending claim');
     }
 
     // Create the claim
+    console.log('Creating claim in database with:', {
+      taskId: data.taskId,
+      childId,
+      childProfileId: data.childProfileId,
+      claimType: data.claimType,
+      status: 'pending',
+    });
+
     const claim = await prisma.taskClaim.create({
       data: {
         taskId: data.taskId,
@@ -66,6 +84,8 @@ export class ClaimService {
         },
       },
     });
+
+    console.log('Claim created successfully:', claim.id);
 
     // Send notification to admin parent
     await NotificationService.sendNotification({
@@ -359,7 +379,7 @@ export class ClaimService {
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        claimedAt: 'desc',
       },
     });
   }
@@ -368,6 +388,8 @@ export class ClaimService {
    * Get pending claims for a parent to review
    */
   static async getPendingClaimsForParent(parentId: string) {
+    console.log('getPendingClaimsForParent called for parentId:', parentId);
+    
     // Get all child profiles where this user is admin or delivery parent
     const childProfiles = await prisma.childProfile.findMany({
       where: {
@@ -378,9 +400,11 @@ export class ClaimService {
       },
     });
 
+    console.log('Found child profiles:', childProfiles.map(cp => ({ id: cp.id, name: cp.name })));
+
     const childProfileIds = childProfiles.map(cp => cp.id);
 
-    return await prisma.taskClaim.findMany({
+    const pendingClaims = await prisma.taskClaim.findMany({
       where: {
         childProfileId: { in: childProfileIds },
         status: 'pending',
@@ -401,8 +425,17 @@ export class ClaimService {
         },
       },
       orderBy: {
-        createdAt: 'asc',
+        claimedAt: 'asc',
       },
     });
+
+    console.log('Found pending claims:', pendingClaims.length, pendingClaims.map(c => ({
+      id: c.id,
+      taskTitle: c.task.title,
+      childName: c.childProfile.name,
+      status: c.status
+    })));
+
+    return pendingClaims;
   }
 }
