@@ -27,6 +27,7 @@ export default function ParentDashboard() {
   const [selectedChild, setSelectedChild] = useState(null);
   const [pendingClaims, setPendingClaims] = useState([]);
   const [claimsLoading, setClaimsLoading] = useState(false);
+  const [isInteracting, setIsInteracting] = useState(false);
 
   // Load data on mount and check onboarding status
   useEffect(() => {
@@ -70,28 +71,70 @@ export default function ParentDashboard() {
     loadData();
   }, [user, navigate, fetchNotifications]);
 
-  // Fetch pending claims when user loads
+  // Fetch pending claims when user loads and poll for updates (optimized)
   useEffect(() => {
+    let pollInterval;
+    let currentInterval = 10000; // Start with 10 seconds
+    const MAX_INTERVAL = 30000; // Max 30 seconds
+    const MIN_INTERVAL = 10000; // Min 10 seconds
+    
     const loadPendingClaims = async () => {
-      if (!user?.id) return;
+      // Skip if user is interacting or tab is not visible
+      if (!user?.id || isInteracting || document.hidden) return;
       
       try {
-        setClaimsLoading(true);
         const response = await claimService.getPendingClaims();
-        // The API interceptor returns response.data, and the claims service returns response.data
-        // So we get { success: true, data: [...claims] }
-        // But if response is already an array, use it directly
         const claims = Array.isArray(response) ? response : (response.data || []);
-        setPendingClaims(claims);
+        
+        // Only update if claims have actually changed
+        const claimsChanged = JSON.stringify(claims) !== JSON.stringify(pendingClaims);
+        if (claimsChanged) {
+          setPendingClaims(claims);
+          // Reset to minimum interval when changes detected
+          currentInterval = MIN_INTERVAL;
+          resetPollInterval();
+        } else {
+          // Gradually increase interval when no changes (exponential backoff)
+          currentInterval = Math.min(currentInterval * 1.5, MAX_INTERVAL);
+          resetPollInterval();
+        }
       } catch (error) {
-        console.error('[ParentDashboard] Error loading pending claims:', error);
-      } finally {
-        setClaimsLoading(false);
+        console.error('Error loading pending claims:', error);
       }
     };
 
-    loadPendingClaims();
-  }, [user, childProfiles]);
+    const resetPollInterval = () => {
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(loadPendingClaims, currentInterval);
+    };
+
+    // Initial load
+    if (!isInteracting) {
+      setClaimsLoading(true);
+      loadPendingClaims().finally(() => setClaimsLoading(false));
+    }
+    
+    // Start polling
+    resetPollInterval();
+    
+    // Pause polling when tab is hidden, resume when visible
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        if (pollInterval) clearInterval(pollInterval);
+      } else {
+        currentInterval = MIN_INTERVAL; // Reset to min when tab becomes visible
+        resetPollInterval();
+        loadPendingClaims(); // Immediate check when tab becomes visible
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      if (pollInterval) clearInterval(pollInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user, childProfiles, isInteracting, pendingClaims]);
 
   // Fetch tasks and rewards when selected child changes
   useEffect(() => {
@@ -295,6 +338,8 @@ export default function ParentDashboard() {
             claims={pendingClaims}
             onVerify={handleVerifyClaim}
             loading={claimsLoading}
+            onInteractionStart={() => setIsInteracting(true)}
+            onInteractionEnd={() => setIsInteracting(false)}
           />
         )}
         {activeTab === 'inbox' && <InboxTab />}

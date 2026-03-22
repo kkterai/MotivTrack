@@ -6,7 +6,7 @@ import { COLORS } from '../../utils/constants';
  * PendingClaimsList - Display and manage pending task claims
  * Allows parents to approve as "Done" or "Extra Well Done", or request redo
  */
-export default function PendingClaimsList({ claims, onVerify, loading }) {
+export default function PendingClaimsList({ claims, onVerify, loading, onInteractionStart, onInteractionEnd }) {
   const [verifying, setVerifying] = useState(null);
   const [redoNote, setRedoNote] = useState('');
   const [showRedoInput, setShowRedoInput] = useState(null);
@@ -73,6 +73,8 @@ export default function PendingClaimsList({ claims, onVerify, loading }) {
             setShowRedoInput={setShowRedoInput}
             redoNote={redoNote}
             setRedoNote={setRedoNote}
+            onInteractionStart={onInteractionStart}
+            onInteractionEnd={onInteractionEnd}
           />
         ))}
       </div>
@@ -80,15 +82,17 @@ export default function PendingClaimsList({ claims, onVerify, loading }) {
   );
 }
 
-function ClaimCard({ 
-  claim, 
-  onApprove, 
-  onRequestRedo, 
-  verifying, 
-  showRedoInput, 
+function ClaimCard({
+  claim,
+  onApprove,
+  onRequestRedo,
+  verifying,
+  showRedoInput,
   setShowRedoInput,
   redoNote,
-  setRedoNote 
+  setRedoNote,
+  onInteractionStart,
+  onInteractionEnd
 }) {
   const task = claim.task;
   const isExtraWellDone = claim.claimType === 'extra_well_done';
@@ -206,6 +210,8 @@ function ClaimCard({
           <textarea
             value={redoNote}
             onChange={(e) => setRedoNote(e.target.value)}
+            onFocus={onInteractionStart}
+            onBlur={onInteractionEnd}
             placeholder="Optional: Let them know what needs improvement..."
             style={{
               width: '100%',

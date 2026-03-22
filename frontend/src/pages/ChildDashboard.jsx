@@ -37,53 +37,95 @@ export default function ChildDashboard() {
     }
   }, [user]);
 
-  // Load data on mount
+  // Load data on mount and poll for updates (optimized)
   useEffect(() => {
-    console.log('[ChildDashboard] User:', user);
-    console.log('[ChildDashboard] childProfileId:', user?.childProfileId);
+    if (!user?.childProfileId) return;
     
-    if (user?.childProfileId) {
-      console.log('[ChildDashboard] Fetching data for childProfileId:', user.childProfileId);
-      fetchTasks(user.childProfileId);
-      fetchBalance(user.childProfileId);
-      fetchRewards(user.childProfileId);
-      fetchNotifications(); // No userId needed - uses authenticated user from token
+    let pollInterval;
+    let currentInterval = 15000; // Start with 15 seconds
+    const MAX_INTERVAL = 60000; // Max 60 seconds
+    const MIN_INTERVAL = 15000; // Min 15 seconds
+    let previousData = null;
+    
+    const loadData = async () => {
+      // Skip if tab is not visible
+      if (document.hidden) return;
       
-      // Fetch task claims to show status
-      claimService.getClaimsByChild(user.childProfileId)
-        .then(response => {
-          console.log('[ChildDashboard] Task claims:', response.data);
-          setTaskClaims(response.data || []);
-        })
-        .catch(error => {
-          console.error('[ChildDashboard] Error fetching task claims:', error);
-        });
-      
-      // Fetch child profile to get parent info
-      childProfileService.getChildProfile(user.childProfileId)
-        .then(profile => {
-          console.log('[ChildDashboard] Child profile:', profile);
-          setChildProfile(profile);
-        })
-        .catch(error => {
-          console.error('[ChildDashboard] Error fetching child profile:', error);
-        });
-      
-      // Fetch point history to get welcome bonus amount
-      pointService.getHistory(user.childProfileId, 100)
-        .then(history => {
-          const welcomeBonus = history.find(tx => tx.source === 'welcome_bonus');
-          if (welcomeBonus) {
-            setWelcomeBonusAmount(welcomeBonus.amount);
-          }
-        })
-        .catch(error => {
-          console.error('[ChildDashboard] Error fetching point history:', error);
-        });
-    } else {
-      console.error('[ChildDashboard] No childProfileId found on user object!');
-    }
-  }, [user]);
+      try {
+        // Fetch all data in parallel
+        const [claimsResponse, profileResponse, historyResponse] = await Promise.all([
+          claimService.getClaimsByChild(user.childProfileId),
+          childProfileService.getChildProfile(user.childProfileId),
+          pointService.getHistory(user.childProfileId, 100)
+        ]);
+        
+        // Update claims
+        const claims = claimsResponse.data || [];
+        setTaskClaims(claims);
+        
+        // Update profile
+        setChildProfile(profileResponse);
+        
+        // Update welcome bonus
+        const welcomeBonus = historyResponse.find(tx => tx.source === 'welcome_bonus');
+        if (welcomeBonus) {
+          setWelcomeBonusAmount(welcomeBonus.amount);
+        }
+        
+        // Fetch tasks, balance, rewards, notifications
+        fetchTasks(user.childProfileId);
+        fetchBalance(user.childProfileId);
+        fetchRewards(user.childProfileId);
+        fetchNotifications();
+        
+        // Check if data changed
+        const currentData = JSON.stringify({ claims, balance: totalPoints });
+        const dataChanged = currentData !== previousData;
+        previousData = currentData;
+        
+        if (dataChanged) {
+          // Reset to minimum interval when changes detected
+          currentInterval = MIN_INTERVAL;
+          resetPollInterval();
+        } else {
+          // Gradually increase interval when no changes (exponential backoff)
+          currentInterval = Math.min(currentInterval * 1.5, MAX_INTERVAL);
+          resetPollInterval();
+        }
+      } catch (error) {
+        console.error('Error loading child dashboard data:', error);
+      }
+    };
+    
+    const resetPollInterval = () => {
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(loadData, currentInterval);
+    };
+    
+    // Load data immediately
+    loadData();
+    
+    // Start polling
+    resetPollInterval();
+    
+    // Pause polling when tab is hidden, resume when visible
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        if (pollInterval) clearInterval(pollInterval);
+      } else {
+        currentInterval = MIN_INTERVAL; // Reset to min when tab becomes visible
+        resetPollInterval();
+        loadData(); // Immediate check when tab becomes visible
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      if (pollInterval) clearInterval(pollInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user, fetchTasks, fetchBalance, fetchRewards, fetchNotifications, totalPoints]);
 
   const handleDismissWelcomeBanner = () => {
     localStorage.setItem('welcomeBannerDismissed', 'true');
