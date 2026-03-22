@@ -13,15 +13,10 @@ import { useAuthStore } from '../../stores/useAuthStore';
 export default function ProtectedRoute({ children, allowedRoles = null }) {
   const { user, token } = useAuthStore();
 
-  console.log('[ProtectedRoute] Checking auth - token:', token, 'user:', user);
-
   // Not authenticated - redirect to login
   if (!token || !user) {
-    console.log('[ProtectedRoute] Not authenticated, redirecting to /');
     return <Navigate to="/" replace />;
   }
-
-  console.log('[ProtectedRoute] Authenticated, checking roles');
 
   // Check role if specified
   if (allowedRoles && !allowedRoles.includes(user?.role)) {

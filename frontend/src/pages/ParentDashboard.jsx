@@ -36,24 +36,18 @@ export default function ParentDashboard() {
       try {
         setLoading(true);
         
-        console.log('[ParentDashboard] Fetching child profiles for user:', user.id, 'role:', user.role);
-        
         // Fetch child profiles for this parent
         const profilesResponse = await childProfileService.getMyChildProfiles();
-        console.log('[ParentDashboard] Child profiles response:', profilesResponse);
         
         // The service already unwraps response.data, so profilesResponse is the array
         const profiles = profilesResponse || [];
-        console.log('[ParentDashboard] Parsed profiles:', profiles, 'count:', profiles.length);
         
         // If admin parent has no child profiles, redirect to onboarding
         if (user.role === 'admin_parent' && profiles.length === 0) {
-          console.log('[ParentDashboard] No child profiles found, redirecting to onboarding');
           navigate('/parent/onboarding', { replace: true });
           return;
         }
         
-        console.log('[ParentDashboard] Child profiles found, loading dashboard');
         setChildProfiles(profiles);
         if (profiles.length > 0) {
           setSelectedChild(profiles[0].id);
@@ -65,7 +59,6 @@ export default function ParentDashboard() {
         console.error('[ParentDashboard] Error loading parent dashboard:', error);
         // If there's an error fetching profiles, assume no profiles and redirect
         if (user.role === 'admin_parent') {
-          console.log('[ParentDashboard] Error occurred, redirecting admin parent to onboarding');
           navigate('/parent/onboarding', { replace: true });
           return;
         }
@@ -106,12 +99,10 @@ export default function ParentDashboard() {
       if (!selectedChild) return;
       
       try {
-        console.log('[ParentDashboard] Fetching tasks and rewards for child:', selectedChild);
         await Promise.all([
           fetchTasks(selectedChild),
           fetchRewards(selectedChild)
         ]);
-        console.log('[ParentDashboard] Tasks and rewards loaded successfully');
       } catch (error) {
         console.error('[ParentDashboard] Error loading child data:', error);
       }
@@ -122,10 +113,7 @@ export default function ParentDashboard() {
 
   // Wrapper functions to inject selectedChild into task/reward operations
   const handleCreateTask = async (taskData) => {
-    if (!selectedChild) {
-      console.error('[ParentDashboard] No child selected');
-      return;
-    }
+    if (!selectedChild) return;
     return createTask({ ...taskData, childProfileId: selectedChild });
   };
 
@@ -135,14 +123,11 @@ export default function ParentDashboard() {
 
   const handleDeleteTask = async (taskId) => {
     // Note: deleteTask is not in the store, so we'll need to handle this differently
-    console.warn('[ParentDashboard] Delete task not implemented yet');
+    console.warn('Delete task not implemented yet');
   };
 
   const handleCreateReward = async (rewardData) => {
-    if (!selectedChild) {
-      console.error('[ParentDashboard] No child selected');
-      return;
-    }
+    if (!selectedChild) return;
     return createReward({ ...rewardData, childProfileId: selectedChild });
   };
 
@@ -152,7 +137,7 @@ export default function ParentDashboard() {
 
   const handleDeleteReward = async (rewardId) => {
     // Note: deleteReward is not in the store, so we'll need to handle this differently
-    console.warn('[ParentDashboard] Delete reward not implemented yet');
+    console.warn('Delete reward not implemented yet');
   };
 
   const handleVerifyClaim = async (claimId, verificationData) => {
@@ -170,7 +155,7 @@ export default function ParentDashboard() {
       }
       await fetchNotifications();
     } catch (error) {
-      console.error('[ParentDashboard] Error verifying claim:', error);
+      console.error('Error verifying claim:', error);
       alert('Failed to verify claim. Please try again.');
     }
   };
