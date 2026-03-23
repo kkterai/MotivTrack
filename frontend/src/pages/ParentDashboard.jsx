@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useTaskStore } from '../stores/useTaskStore';
@@ -6,9 +6,11 @@ import { useRewardStore } from '../stores/useRewardStore';
 import { useNotificationStore } from '../stores/useNotificationStore';
 import { childProfileService } from '../services/childProfiles';
 import { claimService } from '../services/claims';
+import { assignmentService } from '../services/assignments';
+import { rewardService } from '../services/rewards';
 import { COLORS } from '../utils/constants';
 import { Button, Card, Input } from '../components/common';
-import { PendingClaimsList, TaskManagement, RewardManagement } from '../components/parent';
+import { PendingClaimsList, PendingRedemptionsList, TaskManagement, RewardManagement, AssignmentPicker } from '../components/parent';
 
 /**
  * ParentDashboard - Main dashboard for parent users
@@ -21,13 +23,17 @@ export default function ParentDashboard() {
   const { rewards, fetchRewards, createReward, updateReward, deleteReward } = useRewardStore();
   const { notifications, fetchNotifications } = useNotificationStore();
   
-  const [activeTab, setActiveTab] = useState('verify'); // verify, inbox, school, tasks, rewards
+  const [activeTab, setActiveTab] = useState('review'); // review, tasks, rewards, child preview tabs
+  const [childPreviewTab, setChildPreviewTab] = useState('today'); // today, tomorrow
   const [loading, setLoading] = useState(true);
   const [childProfiles, setChildProfiles] = useState([]);
   const [selectedChild, setSelectedChild] = useState(null);
   const [pendingClaims, setPendingClaims] = useState([]);
+  const [pendingRedemptions, setPendingRedemptions] = useState([]);
   const [claimsLoading, setClaimsLoading] = useState(false);
   const [isInteracting, setIsInteracting] = useState(false);
+  const [assignments, setAssignments] = useState([]);
+  const [assignmentsLoading, setAssignmentsLoading] = useState(false);
 
   // Load data on mount and check onboarding status
   useEffect(() => {
@@ -144,23 +150,57 @@ export default function ParentDashboard() {
     };
   }, [user, childProfiles, isInteracting]);
 
-  // Fetch tasks and rewards when selected child changes
+  // Fetch pending redemptions
+  useEffect(() => {
+    const loadPendingRedemptions = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const response = await rewardService.getPendingRedemptions();
+        const redemptions = Array.isArray(response) ? response : (response.data || []);
+        setPendingRedemptions(redemptions);
+      } catch (error) {
+        console.error('Error loading pending redemptions:', error);
+      }
+    };
+
+    loadPendingRedemptions();
+  }, [user]);
+
+  // Load assignments for selected child
+  const loadAssignments = useCallback(async () => {
+    if (!selectedChild) return;
+    
+    try {
+      const assignments = await assignmentService.getChildAssignments(selectedChild);
+      setAssignments(Array.isArray(assignments) ? assignments : []);
+    } catch (error) {
+      console.error('[ParentDashboard] Error loading assignments:', error);
+      setAssignments([]);
+    }
+  }, [selectedChild]);
+
+  // Fetch tasks, rewards, and assignments when selected child changes
   useEffect(() => {
     const loadChildData = async () => {
       if (!selectedChild) return;
       
       try {
+        setAssignmentsLoading(true);
         await Promise.all([
           fetchTasks(selectedChild),
-          fetchRewards(selectedChild)
+          fetchRewards(selectedChild),
+          loadAssignments()
         ]);
       } catch (error) {
         console.error('[ParentDashboard] Error loading child data:', error);
+      } finally {
+        setAssignmentsLoading(false);
       }
     };
 
     loadChildData();
-  }, [selectedChild, fetchTasks, fetchRewards]);
+  }, [selectedChild, fetchTasks, fetchRewards, loadAssignments]);
 
   // Wrapper functions to inject selectedChild into task/reward operations
   const handleCreateTask = async (taskData) => {
@@ -208,6 +248,42 @@ export default function ParentDashboard() {
     } catch (error) {
       console.error('Error verifying claim:', error);
       alert('Failed to verify claim. Please try again.');
+    }
+  };
+
+  const handleAssignTask = async (taskId, date) => {
+    if (!selectedChild) return;
+    
+    try {
+      const dateStr = date === 'today'
+        ? assignmentService.getTodayISO()
+        : assignmentService.getTomorrowISO();
+      
+      await assignmentService.assignTask(taskId, selectedChild, dateStr);
+      
+      // Refresh assignments
+      await loadAssignments();
+      
+      alert(`Task assigned to ${date}!`);
+    } catch (error) {
+      console.error('Error assigning task:', error);
+      alert('Failed to assign task. It may already be assigned for this date.');
+    }
+  };
+
+  const handleDeliverReward = async (redemptionId) => {
+    try {
+      await rewardService.markRewardDelivered(redemptionId);
+      
+      // Refresh pending redemptions
+      const response = await rewardService.getPendingRedemptions();
+      const redemptions = Array.isArray(response) ? response : (response.data || []);
+      setPendingRedemptions(redemptions);
+      
+      alert('Reward marked as delivered!');
+    } catch (error) {
+      console.error('Error delivering reward:', error);
+      alert('Failed to mark reward as delivered.');
     }
   };
 
@@ -307,11 +383,14 @@ export default function ParentDashboard() {
           padding: '0 20px',
         }}>
           {[
-            { id: 'verify', label: '✓ Verify', icon: '✓' },
-            { id: 'inbox', label: '📬 Inbox', icon: '📬' },
-            { id: 'school', label: '🏫 School', icon: '🏫' },
+            { id: 'review', label: '📋 Review', icon: '📋' },
             { id: 'tasks', label: '✏️ Tasks', icon: '✏️' },
             { id: 'rewards', label: '🎁 Rewards', icon: '🎁' },
+            ...childProfiles.map((child, index) => ({
+              id: `child-${child.id}`,
+              label: `👤 ${child.name}`,
+              icon: '👤',
+            })),
           ].map(tab => (
             <button
               key={tab.id}
@@ -341,23 +420,26 @@ export default function ParentDashboard() {
         margin: '0 auto',
         padding: '20px',
       }}>
-        {activeTab === 'verify' && (
-          <PendingClaimsList
+        {activeTab === 'review' && (
+          <ReviewTab
             claims={pendingClaims}
+            redemptions={pendingRedemptions}
             onVerify={handleVerifyClaim}
+            onDeliver={handleDeliverReward}
             loading={claimsLoading}
             onInteractionStart={() => setIsInteracting(true)}
             onInteractionEnd={() => setIsInteracting(false)}
           />
         )}
-        {activeTab === 'inbox' && <InboxTab />}
-        {activeTab === 'school' && <SchoolTab />}
         {activeTab === 'tasks' && (
-          <TaskManagement
+          <TasksTab
             tasks={tasks}
+            assignments={assignments}
+            selectedChild={childProfiles.find(c => c.id === selectedChild)}
             onAddTask={handleCreateTask}
             onEditTask={handleUpdateTask}
             onArchiveTask={handleDeleteTask}
+            onAssignTask={handleAssignTask}
           />
         )}
         {activeTab === 'rewards' && (
@@ -368,41 +450,267 @@ export default function ParentDashboard() {
             onArchiveReward={handleDeleteReward}
           />
         )}
+        {activeTab.startsWith('child-') && (
+          <ChildPreviewTab
+            childId={activeTab.replace('child-', '')}
+            childName={childProfiles.find(c => c.id === activeTab.replace('child-', ''))?.name}
+            assignments={assignments}
+            previewTab={childPreviewTab}
+            onPreviewTabChange={setChildPreviewTab}
+          />
+        )}
       </div>
     </div>
   );
 }
 
-// Inbox Tab - Pending redemptions
-function InboxTab() {
+// Review Tab - Consolidated Verify + Inbox
+function ReviewTab({ claims, redemptions, onVerify, onDeliver, loading, onInteractionStart, onInteractionEnd }) {
   return (
     <div>
       <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px', color: COLORS.textPrimary }}>
-        Pending Deliveries
+        Review - Action Items
       </h2>
-      <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-        <div style={{ fontSize: '64px', marginBottom: '16px' }}>📬</div>
-        <p style={{ fontSize: '16px', color: COLORS.textSecondary }}>
-          No pending reward deliveries
-        </p>
+      <p style={{ fontSize: '14px', color: COLORS.textSecondary, marginBottom: '24px' }}>
+        Verify completed tasks and deliver rewards
+      </p>
+
+      {/* Pending Claims Section */}
+      <div style={{ marginBottom: '32px' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: COLORS.textPrimary }}>
+          ✓ Tasks to Verify
+        </h3>
+        <PendingClaimsList
+          claims={claims}
+          onVerify={onVerify}
+          loading={loading}
+          onInteractionStart={onInteractionStart}
+          onInteractionEnd={onInteractionEnd}
+        />
+      </div>
+
+      {/* Pending Redemptions Section */}
+      <div>
+        <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: COLORS.textPrimary }}>
+          📬 Rewards to Deliver
+        </h3>
+        <PendingRedemptionsList
+          redemptions={redemptions}
+          onDeliver={onDeliver}
+        />
       </div>
     </div>
   );
 }
 
-// School Tab - Teacher management
-function SchoolTab() {
+// Tasks Tab - Task management with assignment
+function TasksTab({ tasks, assignments, selectedChild, onAddTask, onEditTask, onArchiveTask, onAssignTask }) {
+  // Get child icon - default to 🦊 if not set
+  const childIcon = selectedChild?.icon || '🦊';
+  const childName = selectedChild?.name || 'Child';
+  
   return (
     <div>
       <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px', color: COLORS.textPrimary }}>
-        School & Teachers
+        Task Management
       </h2>
-      <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-        <div style={{ fontSize: '64px', marginBottom: '16px' }}>🏫</div>
-        <p style={{ fontSize: '16px', color: COLORS.textSecondary }}>
-          Teacher management coming soon
-        </p>
+      <p style={{ fontSize: '14px', color: COLORS.textSecondary, marginBottom: '8px' }}>
+        Assign tasks to {childName} for today or tomorrow. Edit or add tasks here.
+      </p>
+
+      {/* Task Management Component */}
+      <TaskManagement
+        tasks={tasks}
+        onAddTask={onAddTask}
+        onEditTask={onEditTask}
+        onArchiveTask={onArchiveTask}
+      />
+
+      {/* Assignment Section */}
+      {tasks.length > 0 && (
+        <div style={{ marginTop: '32px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: COLORS.textPrimary }}>
+            Assign Tasks
+          </h3>
+          <div style={{
+            padding: '12px 16px',
+            backgroundColor: COLORS.primaryLight,
+            borderRadius: '8px',
+            marginBottom: '16px',
+            border: `2px solid ${COLORS.primary}`,
+          }}>
+            <p style={{ fontSize: '14px', color: COLORS.primary, fontWeight: '600', margin: 0 }}>
+              {childIcon} Assigning to {childName}
+            </p>
+          </div>
+          {tasks.map(task => (
+            <AssignmentPicker
+              key={task.id}
+              task={task}
+              onAssign={(date) => onAssignTask(task.id, date)}
+              existingAssignments={assignments.filter(a => a.taskId === task.id)}
+              childIcon={childIcon}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Child Preview Tab - Shows what child will see
+function ChildPreviewTab({ childId, childName, assignments, previewTab, onPreviewTabChange }) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  // Filter assignments for this specific child
+  const childAssignments = assignments.filter(a => a.childProfileId === childId);
+
+  const todayAssignments = childAssignments.filter(a => {
+    const assignedDate = new Date(a.assignedFor);
+    assignedDate.setHours(0, 0, 0, 0);
+    return assignedDate.getTime() === today.getTime();
+  });
+
+  const tomorrowAssignments = childAssignments.filter(a => {
+    const assignedDate = new Date(a.assignedFor);
+    assignedDate.setHours(0, 0, 0, 0);
+    return assignedDate.getTime() === tomorrow.getTime();
+  });
+
+  return (
+    <div>
+      <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '8px', color: COLORS.textPrimary }}>
+        {childName}'s View
+      </h2>
+      <p style={{ fontSize: '14px', color: COLORS.textSecondary, marginBottom: '24px' }}>
+        Preview what {childName} will see in their dashboard
+      </p>
+
+      {/* Sub-tabs for Today/Tomorrow */}
+      <div style={{
+        display: 'flex',
+        gap: '8px',
+        marginBottom: '20px',
+        borderBottom: `2px solid ${COLORS.borderLight}`,
+      }}>
+        <button
+          onClick={() => onPreviewTabChange('today')}
+          style={{
+            padding: '12px 24px',
+            background: 'none',
+            border: 'none',
+            borderBottom: previewTab === 'today' ? `3px solid ${COLORS.primary}` : '3px solid transparent',
+            color: previewTab === 'today' ? COLORS.primary : COLORS.textSecondary,
+            fontWeight: previewTab === 'today' ? '700' : '500',
+            fontSize: '14px',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+        >
+          Today ({todayAssignments.length})
+        </button>
+        <button
+          onClick={() => onPreviewTabChange('tomorrow')}
+          style={{
+            padding: '12px 24px',
+            background: 'none',
+            border: 'none',
+            borderBottom: previewTab === 'tomorrow' ? `3px solid ${COLORS.primary}` : '3px solid transparent',
+            color: previewTab === 'tomorrow' ? COLORS.primary : COLORS.textSecondary,
+            fontWeight: previewTab === 'tomorrow' ? '700' : '500',
+            fontSize: '14px',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+        >
+          Tomorrow ({tomorrowAssignments.length})
+        </button>
       </div>
+
+      {/* Task List */}
+      {previewTab === 'today' && (
+        <div>
+          {todayAssignments.length === 0 ? (
+            <Card>
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <div style={{ fontSize: '48px', marginBottom: '12px' }}>📋</div>
+                <div style={{ fontSize: '16px', fontWeight: '600', color: COLORS.textPrimary }}>
+                  No tasks assigned for today
+                </div>
+                <div style={{ fontSize: '14px', color: COLORS.textSecondary, marginTop: '8px' }}>
+                  Go to the Tasks tab to assign tasks
+                </div>
+              </div>
+            </Card>
+          ) : (
+            todayAssignments.map(assignment => (
+              <Card key={assignment.id} style={{ marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '32px' }}>{assignment.task.icon || '📝'}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: '700', fontSize: '16px', color: COLORS.textPrimary }}>
+                      {assignment.task.title}
+                    </div>
+                    <div style={{ fontSize: '14px', color: COLORS.textSecondary }}>
+                      ✅ {assignment.task.pointsDone} pts • ⭐ {assignment.task.pointsExtraWellDone} pts
+                    </div>
+                  </div>
+                  {assignment.completedAt && (
+                    <div style={{
+                      padding: '4px 12px',
+                      borderRadius: '12px',
+                      backgroundColor: COLORS.successLight,
+                      color: COLORS.success,
+                      fontSize: '12px',
+                      fontWeight: '600',
+                    }}>
+                      ✓ Completed
+                    </div>
+                  )}
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
+      )}
+
+      {previewTab === 'tomorrow' && (
+        <div>
+          {tomorrowAssignments.length === 0 ? (
+            <Card>
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <div style={{ fontSize: '48px', marginBottom: '12px' }}>📋</div>
+                <div style={{ fontSize: '16px', fontWeight: '600', color: COLORS.textPrimary }}>
+                  No tasks assigned for tomorrow
+                </div>
+                <div style={{ fontSize: '14px', color: COLORS.textSecondary, marginTop: '8px' }}>
+                  Go to the Tasks tab to assign tasks
+                </div>
+              </div>
+            </Card>
+          ) : (
+            tomorrowAssignments.map(assignment => (
+              <Card key={assignment.id} style={{ marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '32px' }}>{assignment.task.icon || '📝'}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: '700', fontSize: '16px', color: COLORS.textPrimary }}>
+                      {assignment.task.title}
+                    </div>
+                    <div style={{ fontSize: '14px', color: COLORS.textSecondary }}>
+                      ✅ {assignment.task.pointsDone} pts • ⭐ {assignment.task.pointsExtraWellDone} pts
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }

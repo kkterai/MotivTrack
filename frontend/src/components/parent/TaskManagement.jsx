@@ -33,6 +33,7 @@ export default function TaskManagement({ tasks, onAddTask, onEditTask, onArchive
     tips: '',
     done: '',
     extraWellDone: '',
+    taskType: 'INDIVIDUAL', // INDIVIDUAL or SHARED
   });
 
   const categories = [
@@ -127,6 +128,7 @@ export default function TaskManagement({ tasks, onAddTask, onEditTask, onArchive
         done: selectedLibraryTask.doneStandard,
         extraWellDone: selectedLibraryTask.extraWellDoneStandard,
         libraryTaskId: selectedLibraryTask.id,
+        taskType: 'INDIVIDUAL', // Default for library tasks
       });
       setShowLibraryBrowser(false);
       setShowModal(true);
@@ -144,6 +146,7 @@ export default function TaskManagement({ tasks, onAddTask, onEditTask, onArchive
       tips: '',
       done: '',
       extraWellDone: '',
+      taskType: 'INDIVIDUAL', // Default for new tasks
     });
     setShowModal(true);
   };
@@ -161,6 +164,7 @@ export default function TaskManagement({ tasks, onAddTask, onEditTask, onArchive
         tips: task.tips || '',
         done: task.doneStandard || '',
         extraWellDone: task.extraWellDoneStandard || '',
+        taskType: task.taskType || 'INDIVIDUAL',
       });
     } else {
       handleOpenCustomTaskModal();
@@ -177,6 +181,7 @@ export default function TaskManagement({ tasks, onAddTask, onEditTask, onArchive
       tips: formData.tips.split('\n').filter(t => t.trim()).join('\n'), // Backend expects string
       pointsDone: formData.pts,
       pointsExtraWellDone: formData.ptsExtraWellDone,
+      taskType: formData.taskType, // INDIVIDUAL or SHARED
       icon: formData.icon,
       libraryTaskId: formData.libraryTaskId || undefined,
     };
@@ -241,6 +246,19 @@ export default function TaskManagement({ tasks, onAddTask, onEditTask, onArchive
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: '700', fontSize: '16px', color: COLORS.textPrimary }}>
                   {task.title}
+                  {task.taskType === 'SHARED' && (
+                    <span style={{
+                      marginLeft: '8px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      color: '#10b981',
+                      backgroundColor: '#d1fae5',
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                    }}>
+                      👥 Shared
+                    </span>
+                  )}
                   {task.isFromLibrary && (
                     <span style={{
                       marginLeft: '8px',
@@ -518,6 +536,63 @@ export default function TaskManagement({ tasks, onAddTask, onEditTask, onArchive
               placeholder="2"
               style={{ flex: 1 }}
             />
+          </div>
+
+          {/* Task Type Selector */}
+          <div>
+            <label style={{
+              display: 'block',
+              marginBottom: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              color: COLORS.textPrimary
+            }}>
+              Task Type
+            </label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, taskType: 'INDIVIDUAL' })}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  border: `2px solid ${formData.taskType === 'INDIVIDUAL' ? COLORS.primary : COLORS.borderLight}`,
+                  borderRadius: '8px',
+                  background: formData.taskType === 'INDIVIDUAL' ? COLORS.primaryLight : 'white',
+                  color: formData.taskType === 'INDIVIDUAL' ? COLORS.primary : COLORS.textSecondary,
+                  fontWeight: formData.taskType === 'INDIVIDUAL' ? '600' : '500',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                👤 Individual
+                <div style={{ fontSize: '12px', marginTop: '4px', opacity: 0.8 }}>
+                  Each child completes separately
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, taskType: 'SHARED' })}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  border: `2px solid ${formData.taskType === 'SHARED' ? COLORS.primary : COLORS.borderLight}`,
+                  borderRadius: '8px',
+                  background: formData.taskType === 'SHARED' ? COLORS.primaryLight : 'white',
+                  color: formData.taskType === 'SHARED' ? COLORS.primary : COLORS.textSecondary,
+                  fontWeight: formData.taskType === 'SHARED' ? '600' : '500',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                👥 Shared
+                <div style={{ fontSize: '12px', marginTop: '4px', opacity: 0.8 }}>
+                  One child completes for all
+                </div>
+              </button>
+            </div>
           </div>
 
           <Input

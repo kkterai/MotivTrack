@@ -47,4 +47,13 @@ export const taskService = {
     const response = await api.get(`/tasks/child/${childProfileId}/stats`);
     return response.data;
   },
+
+  /**
+   * Get tasks assigned for a specific date (for child view)
+   */
+  async getTasksForDate(childProfileId, date) {
+    // Backend returns { success, data: tasks[] }, interceptor unwraps to { success, data }
+    const response = await api.get(`/tasks/child/${childProfileId}/date/${date}`);
+    return response.data;
+  },
 };

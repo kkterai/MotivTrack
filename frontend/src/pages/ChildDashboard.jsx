@@ -7,6 +7,7 @@ import { useNotificationStore } from '../stores/useNotificationStore';
 import { childProfileService } from '../services/childProfiles';
 import { pointService } from '../services/points';
 import { claimService } from '../services/claims';
+import { taskService } from '../services/tasks';
 import { COLORS } from '../utils/constants';
 import { Button, Card } from '../components/common';
 
@@ -16,18 +17,19 @@ import { Button, Card } from '../components/common';
  */
 export default function ChildDashboard() {
   const { user, logout } = useAuthStore();
-  const { tasks, fetchTasks, loading: tasksLoading } = useTaskStore();
   const { balance: totalPoints, fetchBalance } = usePointStore();
   const { rewards, fetchRewards, redeemReward, loading: rewardsLoading } = useRewardStore();
   const { notifications, fetchNotifications } = useNotificationStore();
   
-  const [activeTab, setActiveTab] = useState('tasks'); // tasks, rewards, school, history
+  const [activeTab, setActiveTab] = useState('tasks'); // tasks, rewards
   const [expandedTask, setExpandedTask] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [showWelcomeBanner, setShowWelcomeBanner] = useState(false);
   const [childProfile, setChildProfile] = useState(null);
   const [welcomeBonusAmount, setWelcomeBonusAmount] = useState(0);
   const [taskClaims, setTaskClaims] = useState([]);
+  const [todayTasks, setTodayTasks] = useState([]);
+  const [tasksLoading, setTasksLoading] = useState(false);
 
   // Check if welcome banner should be shown
   useEffect(() => {
@@ -80,8 +82,7 @@ export default function ChildDashboard() {
           setWelcomeBonusAmount(parentBonus);
         }
         
-        // Fetch tasks, balance, rewards, notifications
-        fetchTasks(user.childProfileId);
+        // Fetch balance, rewards, notifications
         fetchBalance(user.childProfileId);
         fetchRewards(user.childProfileId);
         fetchNotifications();
@@ -137,7 +138,31 @@ export default function ChildDashboard() {
       if (pollInterval) clearInterval(pollInterval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [user, fetchTasks, fetchBalance, fetchRewards, fetchNotifications, totalPoints]);
+  }, [user, fetchBalance, fetchRewards, fetchNotifications, totalPoints]);
+
+  // Function to fetch today's tasks
+  const fetchTodayTasks = async () => {
+    if (!user?.childProfileId) return;
+    
+    try {
+      setTasksLoading(true);
+      const today = new Date().toISOString().split('T')[0];
+      const response = await taskService.getTasksForDate(user.childProfileId, today);
+      setTodayTasks(Array.isArray(response) ? response : (response.data || []));
+    } catch (error) {
+      console.error('Error fetching today\'s tasks:', error);
+      setTodayTasks([]);
+    } finally {
+      setTasksLoading(false);
+    }
+  };
+
+  // Fetch today's tasks on mount and when user changes
+  useEffect(() => {
+    if (user?.childProfileId) {
+      fetchTodayTasks();
+    }
+  }, [user?.childProfileId]);
 
   const handleDismissWelcomeBanner = () => {
     localStorage.setItem('welcomeBannerDismissed', 'true');
@@ -159,7 +184,7 @@ export default function ChildDashboard() {
       
       // Refresh data
       await Promise.all([
-        fetchTasks(user.childProfileId),
+        fetchTodayTasks(),
         fetchNotifications(), // No userId needed
       ]);
       
@@ -192,8 +217,8 @@ export default function ChildDashboard() {
     }
   };
 
-  const tasksCompleted = tasks.filter(t => t.completedToday).length;
-  const totalTasks = tasks.length;
+  const tasksCompleted = todayTasks.filter(t => t.completedToday).length;
+  const totalTasks = todayTasks.length;
 
   return (
     <div style={{ minHeight: '100vh', background: COLORS.background }}>
@@ -338,7 +363,7 @@ export default function ChildDashboard() {
       }}>
         {activeTab === 'tasks' && (
           <TasksTab
-            tasks={tasks}
+            tasks={todayTasks}
             taskClaims={taskClaims}
             loading={tasksLoading}
             expandedTask={expandedTask}
@@ -417,29 +442,47 @@ function TaskCard({ task, claim, isExpanded, onToggle, onSubmit, submitting }) {
   const isVerified = claim && claim.status === 'verified';
   const needsRedo = claim && claim.status === 'redo_requested';
   
+  // Check if task was auto-completed by a sibling (shared task with completedAt but no claim)
+  const isAutoCompleted = task.taskType === 'SHARED' &&
+                          task.taskAssignments?.[0]?.completedAt &&
+                          !claim;
+  
   return (
     <Card style={{
       padding: 0,
       overflow: 'hidden',
-      borderLeft: needsRedo ? '4px solid #E74C3C' : hasPendingClaim ? `4px solid ${COLORS.accent}` : isVerified ? `4px solid ${COLORS.primary}` : 'none',
-      background: needsRedo ? '#FFEBEE' : isVerified ? '#F0FDF9' : 'white',
+      borderLeft: needsRedo ? '4px solid #E74C3C' : hasPendingClaim ? `4px solid ${COLORS.accent}` : (isVerified || isAutoCompleted) ? `4px solid ${COLORS.primary}` : 'none',
+      background: needsRedo ? '#FFEBEE' : (isVerified || isAutoCompleted) ? '#F0FDF9' : 'white',
     }}>
       {/* Task Header */}
       <div
-        onClick={!hasPendingClaim && !isVerified ? onToggle : undefined}
+        onClick={!hasPendingClaim && !isVerified && !isAutoCompleted ? onToggle : undefined}
         style={{
           padding: '16px',
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          cursor: (!hasPendingClaim && !isVerified) ? 'pointer' : 'default',
-          background: isExpanded ? COLORS.backgroundLight : (needsRedo ? '#FFEBEE' : isVerified ? '#F0FDF9' : 'white'),
+          cursor: (!hasPendingClaim && !isVerified && !isAutoCompleted) ? 'pointer' : 'default',
+          background: isExpanded ? COLORS.backgroundLight : (needsRedo ? '#FFEBEE' : (isVerified || isAutoCompleted) ? '#F0FDF9' : 'white'),
         }}
       >
         <div style={{ fontSize: '32px' }}>{task.icon || '📋'}</div>
         <div style={{ flex: 1 }}>
           <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: COLORS.textPrimary }}>
             {task.title}
+            {task.taskType === 'SHARED' && !isAutoCompleted && (
+              <span style={{
+                marginLeft: '8px',
+                fontSize: '11px',
+                fontWeight: '600',
+                color: '#10b981',
+                backgroundColor: '#d1fae5',
+                padding: '2px 6px',
+                borderRadius: '8px',
+              }}>
+                👥 Shared
+              </span>
+            )}
           </h3>
           <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: COLORS.textSecondary }}>
             {task.doneStandard?.substring(0, 60)}{task.doneStandard?.length > 60 ? '...' : ''}
@@ -459,7 +502,19 @@ function TaskCard({ task, claim, isExpanded, onToggle, onSubmit, submitting }) {
             ⏳ Pending Review
           </div>
         )}
-        {isVerified && (
+        {isAutoCompleted && (
+          <div style={{
+            background: '#10b981',
+            color: 'white',
+            padding: '6px 12px',
+            borderRadius: '12px',
+            fontSize: '12px',
+            fontWeight: '700',
+          }}>
+            👥 Done by Sibling!
+          </div>
+        )}
+        {isVerified && !isAutoCompleted && (
           <div style={{
             background: COLORS.primary,
             color: 'white',
@@ -483,7 +538,7 @@ function TaskCard({ task, claim, isExpanded, onToggle, onSubmit, submitting }) {
             🔄 Try Again
           </div>
         )}
-        {!hasPendingClaim && !isVerified && !needsRedo && (
+        {!hasPendingClaim && !isVerified && !needsRedo && !isAutoCompleted && (
           <div style={{
             background: COLORS.primary,
             color: 'white',
@@ -514,7 +569,7 @@ function TaskCard({ task, claim, isExpanded, onToggle, onSubmit, submitting }) {
       )}
 
       {/* Expanded Content */}
-      {isExpanded && !hasPendingClaim && !isVerified && (
+      {isExpanded && !hasPendingClaim && !isVerified && !isAutoCompleted && (
         <div style={{ padding: '0 16px 16px', background: COLORS.backgroundLight }}>
           {/* Tips */}
           {tips.length > 0 && (
