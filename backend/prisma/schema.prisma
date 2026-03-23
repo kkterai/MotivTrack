@@ -129,6 +129,7 @@ model ChildProfile {
 
   // Relations
   tasks                Task[]
+  taskAssignments      TaskAssignment[]
   taskClaims           TaskClaim[]
   pointTransactions    PointTransaction[]
   rewards              Reward[]
@@ -188,13 +189,38 @@ model Task {
   updatedAt             DateTime     @updatedAt
 
   // Relations
-  childProfile ChildProfile @relation(fields: [childProfileId], references: [id])
-  libraryTask  LibraryTask? @relation(fields: [libraryTaskId], references: [id])
-  taskClaims   TaskClaim[]
+  childProfile    ChildProfile     @relation(fields: [childProfileId], references: [id])
+  libraryTask     LibraryTask?     @relation(fields: [libraryTaskId], references: [id])
+  taskAssignments TaskAssignment[]
+  taskClaims      TaskClaim[]
 
   @@index([childProfileId])
   @@index([libraryTaskId])
   @@index([isArchived])
+}
+
+// ============================================================================
+// TASK ASSIGNMENTS
+// ============================================================================
+
+model TaskAssignment {
+  id             String   @id @default(uuid())
+  taskId         String
+  childProfileId String
+  assignedFor    DateTime // Date the task is assigned for (date-only, stored as midnight UTC)
+  assignedBy     String   // User ID of parent who assigned
+  assignedAt     DateTime @default(now())
+  completedAt    DateTime? // When the task was completed (if applicable)
+  
+  // Relations
+  task         Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  childProfile ChildProfile @relation(fields: [childProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, assignedFor]) // Prevent duplicate assignments for same task on same day
+  @@index([taskId])
+  @@index([childProfileId])
+  @@index([assignedFor])
+  @@index([assignedBy])
 }
 
 // ============================================================================

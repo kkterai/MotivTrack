@@ -143,4 +143,36 @@ export class TaskController {
       });
     }
   }
+
+  /**
+   * Get tasks assigned for a specific date (for child view)
+   * GET /api/tasks/child/:childProfileId/date/:date
+   */
+  static async getTasksForDate(req: Request, res: Response) {
+    try {
+      const { childProfileId, date } = req.params;
+
+      if (!date) {
+        return res.status(400).json({
+          success: false,
+          error: 'Date parameter is required',
+        });
+      }
+
+      const tasks = await TaskService.getTasksForDate(
+        childProfileId,
+        new Date(date)
+      );
+
+      res.status(200).json({
+        success: true,
+        data: tasks,
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  }
 }

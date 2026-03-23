@@ -8,6 +8,7 @@ dotenv.config();
 // Import routes
 import authRoutes from './api/routes/auth.routes.js';
 import taskRoutes from './api/routes/task.routes.js';
+import taskAssignmentRoutes from './api/routes/taskAssignment.routes.js';
 import claimRoutes from './api/routes/claim.routes.js';
 import pointRoutes from './api/routes/point.routes.js';
 import rewardRoutes from './api/routes/reward.routes.js';
@@ -59,6 +60,7 @@ app.get('/health', (req: Request, res: Response) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/assignments', taskAssignmentRoutes);
 app.use('/api/claims', claimRoutes);
 app.use('/api/points', pointRoutes);
 app.use('/api/rewards', rewardRoutes);

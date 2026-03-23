@@ -82,6 +82,16 @@ export class TaskService {
       },
       include: {
         libraryTask: true,
+        taskAssignments: {
+          where: {
+            assignedFor: {
+              gte: new Date(new Date().setUTCHours(0, 0, 0, 0)),
+            },
+          },
+          orderBy: {
+            assignedFor: 'asc',
+          },
+        },
         taskClaims: {
           where: {
             status: {
@@ -92,6 +102,52 @@ export class TaskService {
             claimedAt: 'desc',
           },
           take: 1, // Get most recent claim
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return tasks;
+  }
+
+  /**
+   * Get tasks assigned for a specific date (for child view)
+   */
+  static async getTasksForDate(childProfileId: string, date: Date) {
+    // Normalize date to midnight UTC
+    const normalizedDate = new Date(date);
+    normalizedDate.setUTCHours(0, 0, 0, 0);
+
+    const tasks = await prisma.task.findMany({
+      where: {
+        childProfileId,
+        isArchived: false,
+        taskAssignments: {
+          some: {
+            assignedFor: normalizedDate,
+          },
+        },
+      },
+      include: {
+        libraryTask: true,
+        taskAssignments: {
+          where: {
+            assignedFor: normalizedDate,
+          },
+        },
+        taskClaims: {
+          where: {
+            claimedAt: {
+              gte: normalizedDate,
+              lt: new Date(normalizedDate.getTime() + 24 * 60 * 60 * 1000),
+            },
+          },
+          orderBy: {
+            claimedAt: 'desc',
+          },
+          take: 1,
         },
       },
       orderBy: {

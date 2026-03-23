@@ -20,6 +20,13 @@ router.post('/', authenticate, requireAdminParent, TaskController.createTask);
 router.get('/child/:childProfileId', authenticate, TaskController.getTasksByChild);
 
 /**
+ * @route   GET /api/tasks/child/:childProfileId/date/:date
+ * @desc    Get tasks assigned for a specific date
+ * @access  Private
+ */
+router.get('/child/:childProfileId/date/:date', authenticate, TaskController.getTasksForDate);
+
+/**
  * @route   GET /api/tasks/child/:childProfileId/stats
  * @desc    Get task statistics for a child
  * @access  Private
