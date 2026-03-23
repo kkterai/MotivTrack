@@ -54,6 +54,7 @@ export class TaskService {
         tips: data.tips,
         pointsDone: data.pointsDone,
         pointsExtraWellDone: data.pointsExtraWellDone,
+        taskType: data.taskType || 'INDIVIDUAL', // Default to INDIVIDUAL if not specified
         isFromLibrary: !!data.libraryTaskId,
         libraryTaskId: data.libraryTaskId,
       },
@@ -208,6 +209,7 @@ export class TaskService {
         tips: data.tips,
         pointsDone: data.pointsDone,
         pointsExtraWellDone: data.pointsExtraWellDone,
+        taskType: data.taskType, // Update taskType if provided
       },
       include: {
         libraryTask: true,

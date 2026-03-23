@@ -120,7 +120,11 @@ export class ClaimService {
     const claim = await prisma.taskClaim.findUnique({
       where: { id: claimId },
       include: {
-        task: true,
+        task: {
+          include: {
+            childProfile: true, // Include child profile to get siblings
+          },
+        },
         child: {
           select: {
             id: true,
@@ -206,6 +210,11 @@ export class ClaimService {
           },
         },
       });
+
+      // SHARED TASK LOGIC: If this is a shared task, auto-complete it for all siblings
+      if (claim.task.taskType === 'SHARED') {
+        await this.autoCompleteSharedTaskForSiblings(claim);
+      }
     } else if (data.status === 'redo_requested') {
       // Send notification to child about redo request
       await NotificationService.sendNotification({
@@ -426,5 +435,73 @@ export class ClaimService {
     });
 
     return pendingClaims;
+  }
+
+  /**
+   * Auto-complete shared tasks for siblings when one child completes it
+   * This is called after a shared task claim is verified
+   */
+  private static async autoCompleteSharedTaskForSiblings(claim: any) {
+    try {
+      // Get all siblings (children with the same admin parent)
+      const siblings = await prisma.childProfile.findMany({
+        where: {
+          adminParentId: claim.task.childProfile.adminParentId,
+          id: { not: claim.childProfileId }, // Exclude the child who completed it
+          isArchived: false,
+        },
+        include: {
+          childUser: true, // Include user for notifications
+        },
+      });
+
+      // Get the date of the claim (normalize to midnight UTC)
+      const claimDate = new Date(claim.claimedAt);
+      claimDate.setUTCHours(0, 0, 0, 0);
+
+      // For each sibling, check if they have this task assigned for the same date
+      for (const sibling of siblings) {
+        // Check if there's a task assignment for this sibling for the same date
+        const assignment = await prisma.taskAssignment.findFirst({
+          where: {
+            taskId: claim.taskId,
+            childProfileId: sibling.id,
+            assignedFor: claimDate,
+          },
+        });
+
+        if (assignment) {
+          // Mark the assignment as completed
+          await prisma.taskAssignment.update({
+            where: { id: assignment.id },
+            data: { completedAt: new Date() },
+          });
+
+          // Send notification to the sibling
+          if (sibling.childUser) {
+            await NotificationService.sendNotification({
+              userId: sibling.childUser.id,
+              type: 'task_auto_completed',
+              payload: {
+                title: `${claim.child.name} completed a shared task! ✓`,
+                body: `${claim.task.title} - This task is now complete for everyone.`,
+                actionUrl: '/child/dashboard',
+                metadata: {
+                  taskId: claim.taskId,
+                  taskTitle: claim.task.title,
+                  completedBy: claim.child.name,
+                  completedByChildProfileId: claim.childProfileId,
+                },
+              },
+            });
+          }
+        }
+      }
+
+      console.log(`[ClaimService] Auto-completed shared task "${claim.task.title}" for ${siblings.length} siblings`);
+    } catch (error) {
+      console.error('[ClaimService] Error auto-completing shared task for siblings:', error);
+      // Don't throw - we don't want to fail the main claim verification if this fails
+    }
   }
 }

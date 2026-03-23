@@ -47,6 +47,11 @@ enum PointSource {
   welcome_bonus
 }
 
+enum TaskType {
+  INDIVIDUAL  // Task must be completed by each child individually (e.g., "Make your bed")
+  SHARED      // Task completed by one child counts for all (e.g., "Vacuum living room")
+}
+
 enum InvitationStatus {
   pending
   accepted
@@ -181,6 +186,7 @@ model Task {
   tips                  String?       @db.Text
   pointsDone            Int
   pointsExtraWellDone   Int
+  taskType              TaskType     @default(INDIVIDUAL) // INDIVIDUAL or SHARED
   isFromLibrary         Boolean      @default(false)
   libraryTaskId         String?
   isArchived            Boolean      @default(false)

@@ -1,6 +1,9 @@
 import { Request } from 'express';
 import { Role } from '@prisma/client';
 
+// TaskType enum (matches Prisma schema)
+export type TaskType = 'INDIVIDUAL' | 'SHARED';
+
 // ============================================================================
 // AUTH TYPES
 // ============================================================================
@@ -55,6 +58,7 @@ export interface CreateTaskDTO {
   tips: string;
   pointsDone: number;
   pointsExtraWellDone: number;
+  taskType?: TaskType; // INDIVIDUAL or SHARED (defaults to INDIVIDUAL)
   libraryTaskId?: string;
 }
 
@@ -65,6 +69,7 @@ export interface UpdateTaskDTO {
   tips?: string;
   pointsDone?: number;
   pointsExtraWellDone?: number;
+  taskType?: TaskType; // INDIVIDUAL or SHARED
 }
 
 // ============================================================================
