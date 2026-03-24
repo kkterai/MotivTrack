@@ -1,0 +1,90 @@
+/* ChildDashboardHero Component Styles */
+
+.child-hero {
+  background: var(--hero-bg, linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary)));
+  padding: var(--space-5);
+  color: var(--color-text-inverse);
+}
+
+.child-hero__container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.child-hero__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.child-hero__profile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.child-hero__avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--color-surface-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.child-hero__greeting {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.child-hero__title {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.child-hero__subtitle {
+  font-size: 14px;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.child-hero__points {
+  background: var(--color-reward);
+  color: var(--color-text-primary);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.child-hero__points-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.child-hero__progress {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+}
+
+/* Override progress bar styles for hero */
+.child-hero__progress .ui-progress__header {
+  color: var(--color-text-inverse);
+  font-weight: 600;
+}
+
+.child-hero__progress .ui-progress__track {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.child-hero__progress .ui-progress__fill {
+  background: var(--color-text-inverse);
+}

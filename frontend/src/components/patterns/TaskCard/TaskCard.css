@@ -1,0 +1,161 @@
+/* TaskCard Component Styles */
+
+.task-card {
+  border-left: 4px solid transparent;
+  transition: all 180ms ease;
+}
+
+.task-card--pending {
+  border-left-color: var(--color-accent-warm);
+}
+
+.task-card--verified {
+  border-left-color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 5%, white);
+}
+
+.task-card--redo {
+  border-left-color: var(--color-destructive);
+  background: color-mix(in srgb, var(--color-destructive) 5%, white);
+}
+
+.task-card__header {
+  padding: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  transition: background-color 160ms ease;
+}
+
+.task-card__header--interactive {
+  cursor: pointer;
+}
+
+.task-card__header--interactive:hover {
+  background: var(--color-surface-panel);
+}
+
+.task-card__header--expanded {
+  background: var(--color-surface-panel);
+}
+
+.task-card__icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.task-card__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-card__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.task-card__shared-badge {
+  font-size: 11px;
+  padding: 2px 6px;
+}
+
+.task-card__description {
+  margin: var(--space-1) 0 0 0;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.task-card__status {
+  flex-shrink: 0;
+}
+
+.task-card__redo-note {
+  padding: var(--space-3) var(--space-4);
+  background: color-mix(in srgb, var(--color-destructive) 15%, white);
+  border-top: 1px solid var(--color-destructive);
+}
+
+.task-card__redo-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-destructive);
+  margin-bottom: var(--space-1);
+}
+
+.task-card__redo-text {
+  font-size: 14px;
+  color: var(--color-destructive);
+}
+
+.task-card__expanded {
+  padding: 0 var(--space-4) var(--space-4);
+  background: var(--color-surface-panel);
+}
+
+.task-card__tips {
+  background: color-mix(in srgb, var(--color-accent-warm) 20%, white);
+  border: 2px solid var(--color-accent-warm);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.task-card__tips-label {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: var(--space-2);
+  color: var(--color-text-primary);
+}
+
+.task-card__tip {
+  font-size: 14px;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-1);
+  padding-left: var(--space-2);
+  border-left: 3px solid var(--color-accent-warm);
+}
+
+.task-card__tip:last-child {
+  margin-bottom: 0;
+}
+
+.task-card__actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.task-card__action-button {
+  padding: var(--space-4);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.task-card__action-points {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.task-card__standards {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.task-card__standard {
+  margin-bottom: var(--space-2);
+}
+
+.task-card__standard:last-child {
+  margin-bottom: 0;
+}
+
+.task-card__standard strong {
+  color: var(--color-text-primary);
+}

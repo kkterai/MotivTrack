@@ -1,0 +1,63 @@
+/* ParentDashboardHero Component Styles */
+
+.parent-hero {
+  background: var(--hero-bg, var(--color-brand-primary));
+  padding: var(--space-5);
+  color: var(--color-text-inverse);
+}
+
+.parent-hero__container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.parent-hero__profile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.parent-hero__avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--color-surface-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.parent-hero__greeting {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.parent-hero__title {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.parent-hero__subtitle {
+  font-size: 14px;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.parent-hero__logout {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--color-text-inverse);
+  border: 2px solid var(--color-text-inverse);
+}
+
+.parent-hero__logout:hover:not(:disabled) {
+  background: var(--color-surface-card);
+  color: var(--color-brand-primary);
+}

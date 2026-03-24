@@ -1,0 +1,78 @@
+/* Chip Component Styles */
+
+.ui-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  white-space: nowrap;
+  transition: background-color 160ms ease, transform 160ms ease;
+  border: 2px solid transparent;
+}
+
+/* Interactive chips */
+.ui-chip--interactive {
+  cursor: pointer;
+}
+
+.ui-chip--interactive:hover:not(.ui-chip--disabled) {
+  transform: translateY(-1px);
+}
+
+/* Variants */
+.ui-chip--selected {
+  background: var(--color-brand-primary);
+  color: var(--color-text-inverse);
+}
+
+.ui-chip--unselected {
+  background: var(--color-surface-panel);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-default);
+}
+
+.ui-chip--unselected:hover:not(.ui-chip--disabled) {
+  background: var(--color-surface-muted);
+}
+
+.ui-chip--dismissible {
+  background: var(--color-surface-card);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-default);
+}
+
+.ui-chip--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Dismiss button */
+.ui-chip__dismiss {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 160ms ease;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ui-chip__dismiss:hover:not(:disabled) {
+  opacity: 1;
+}
+
+.ui-chip__dismiss:disabled {
+  cursor: not-allowed;
+}

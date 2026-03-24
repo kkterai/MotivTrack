@@ -1,0 +1,72 @@
+/* RewardCard Component Styles */
+
+.reward-card {
+  padding: var(--space-4);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.reward-card__icon {
+  font-size: 48px;
+  margin-bottom: var(--space-2);
+}
+
+.reward-card__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+}
+
+.reward-card__category {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.reward-card__cost {
+  font-size: 18px;
+  font-weight: 700;
+  margin: var(--space-2) 0;
+}
+
+.reward-card__scheduling {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+}
+
+.reward-card__button {
+  margin-top: var(--space-2);
+}
+
+.reward-card__insufficient {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-panel);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: var(--space-2);
+  width: 100%;
+}
+
+.reward-card__link {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: 11px;
+  color: var(--color-brand-primary);
+  text-decoration: none;
+  transition: opacity 160ms ease;
+}
+
+.reward-card__link:hover {
+  opacity: 0.7;
+}

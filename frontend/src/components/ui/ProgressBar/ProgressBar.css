@@ -1,0 +1,51 @@
+/* ProgressBar Component Styles */
+
+.ui-progress {
+  width: 100%;
+}
+
+.ui-progress__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+}
+
+.ui-progress__label {
+  color: var(--color-text-primary);
+}
+
+.ui-progress__value {
+  color: var(--color-text-secondary);
+}
+
+.ui-progress__track {
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-sm);
+  height: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.ui-progress__fill {
+  height: 100%;
+  background: var(--color-success);
+  border-radius: var(--radius-sm);
+  transition: width 220ms ease;
+}
+
+/* Variants */
+.ui-progress--success .ui-progress__fill {
+  background: var(--color-success);
+}
+
+.ui-progress--warning .ui-progress__fill {
+  background: var(--color-warning);
+}
+
+.ui-progress--default .ui-progress__fill {
+  background: var(--color-brand-primary);
+}

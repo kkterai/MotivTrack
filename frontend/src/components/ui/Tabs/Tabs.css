@@ -1,0 +1,53 @@
+/* Tabs Component Styles */
+
+.ui-tabs {
+  display: flex;
+  gap: var(--space-2);
+  border-bottom: 2px solid var(--color-border-muted);
+  background: var(--color-surface-card);
+}
+
+.ui-tabs__tab {
+  flex: 1;
+  padding: var(--space-4) var(--space-2);
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  font-size: 14px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 160ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+
+.ui-tabs__tab:hover {
+  color: var(--color-text-primary);
+}
+
+.ui-tabs__tab--active {
+  color: var(--color-brand-primary);
+  font-weight: 700;
+  border-bottom-color: var(--color-brand-primary);
+}
+
+/* Child mode - can use slightly stronger accents */
+.ui-tabs--child .ui-tabs__tab--active {
+  color: var(--color-brand-secondary);
+  border-bottom-color: var(--color-brand-secondary);
+}
+
+.ui-tabs__icon {
+  font-size: 16px;
+}
+
+/* Focus styles */
+.ui-tabs__tab:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: -2px;
+}

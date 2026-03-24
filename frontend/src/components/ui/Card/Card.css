@@ -1,0 +1,42 @@
+/* Card Component Styles */
+
+.ui-card {
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-muted);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+/* Variants */
+.ui-card--default {
+  box-shadow: var(--shadow-md);
+}
+
+.ui-card--panel {
+  background: var(--color-surface-panel);
+  box-shadow: none;
+}
+
+.ui-card--elevated {
+  box-shadow: var(--shadow-lg);
+}
+
+.ui-card--reward {
+  background: color-mix(in srgb, var(--color-reward) 12%, white);
+  border-color: color-mix(in srgb, var(--color-reward) 30%, white);
+}
+
+/* Hoverable state */
+.ui-card--hoverable {
+  cursor: pointer;
+}
+
+.ui-card--hoverable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.ui-card--panel.ui-card--hoverable:hover {
+  box-shadow: var(--shadow-md);
+}

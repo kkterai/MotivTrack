@@ -1,0 +1,54 @@
+/* Badge Component Styles */
+
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+/* Variants */
+.ui-badge--completed,
+.ui-badge--verified {
+  background: var(--color-success);
+  color: var(--color-text-inverse);
+}
+
+.ui-badge--pending {
+  background: var(--color-accent-warm);
+  color: var(--color-text-primary);
+}
+
+.ui-badge--overdue {
+  background: var(--color-destructive);
+  color: var(--color-text-inverse);
+}
+
+.ui-badge--declined {
+  background: color-mix(in srgb, var(--color-destructive) 20%, white);
+  color: var(--color-destructive);
+  border: 1px solid var(--color-destructive);
+}
+
+.ui-badge--archived {
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+}
+
+.ui-badge--draft {
+  background: var(--color-surface-panel);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-default);
+}
+
+.ui-badge--redo_requested {
+  background: var(--color-destructive);
+  color: var(--color-text-inverse);
+}

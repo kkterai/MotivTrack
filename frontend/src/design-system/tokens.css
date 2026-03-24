@@ -1,0 +1,84 @@
+/* MotivTrack Design System - Design Tokens */
+
+:root {
+  /* ========================================
+     BRAND COLORS
+     ======================================== */
+  --color-brand-primary: #16324F;   /* Ink Navy */
+  --color-brand-secondary: #2A6F97; /* Ocean Blue */
+
+  /* ========================================
+     SEMANTIC COLORS
+     ======================================== */
+  --color-success: #1FA37A;         /* Emerald Teal */
+  --color-accent-warm: #E9C46A;     /* Soft Gold */
+  --color-reward: #F4A261;          /* Reward Orange */
+  --color-destructive: #E76F51;     /* Coral Red */
+
+  /* ========================================
+     SURFACE COLORS
+     ======================================== */
+  --color-surface-page: #FCFBF8;
+  --color-surface-panel: #F6F3EE;
+  --color-surface-card: #FFFFFF;
+  --color-surface-muted: #E7EAEC;
+
+  /* ========================================
+     TEXT COLORS
+     ======================================== */
+  --color-text-primary: #1E2A36;
+  --color-text-secondary: #4F5D6B;
+  --color-text-inverse: #FFFFFF;
+
+  /* ========================================
+     BORDER COLORS
+     ======================================== */
+  --color-border-default: #D7DDE2;
+  --color-border-muted: #E7EAEC;
+
+  /* ========================================
+     STATE HELPERS
+     ======================================== */
+  --color-info: #2A6F97;
+  --color-warning: #E9C46A;
+  --color-active: #1FA37A;
+
+  /* ========================================
+     TYPOGRAPHY
+     ======================================== */
+  --font-sans: "Manrope", system-ui, sans-serif;
+  --font-serif: "Literata", Georgia, serif;
+  --font-sans-alt: "Inter", system-ui, sans-serif;
+  --font-serif-alt: "Merriweather", Georgia, serif;
+
+  /* ========================================
+     SPACING
+     ======================================== */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ========================================
+     BORDER RADIUS
+     ======================================== */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-pill: 999px;
+
+  /* ========================================
+     SHADOWS
+     ======================================== */
+  --shadow-sm: 0 1px 3px rgba(22, 50, 79, 0.06);
+  --shadow-md: 0 6px 18px rgba(22, 50, 79, 0.08);
+  --shadow-lg: 0 10px 28px rgba(22, 50, 79, 0.10);
+}

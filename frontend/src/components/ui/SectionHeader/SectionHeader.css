@@ -1,0 +1,37 @@
+/* SectionHeader Component Styles */
+
+.ui-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.ui-section-header__content {
+  flex: 1;
+}
+
+.ui-section-header__title {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.ui-section-header__title--serif {
+  font-family: var(--font-serif);
+  font-size: 24px;
+}
+
+.ui-section-header__subtitle {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.ui-section-header__action {
+  flex-shrink: 0;
+}

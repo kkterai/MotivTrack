@@ -1,0 +1,33 @@
+/* EmptyState Component Styles */
+
+.ui-empty-state {
+  text-align: center;
+  padding: var(--space-16) var(--space-6);
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.ui-empty-state__icon {
+  font-size: 64px;
+  margin-bottom: var(--space-4);
+  line-height: 1;
+}
+
+.ui-empty-state__heading {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.ui-empty-state__description {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-6) 0;
+  line-height: 1.6;
+}
+
+.ui-empty-state__action {
+  margin-top: var(--space-4);
+}
