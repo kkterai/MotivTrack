@@ -54,16 +54,22 @@ export default function ChildDashboard() {
       if (document.hidden) return;
       
       try {
-        // Fetch all data in parallel
-        const [claimsResponse, profileResponse, historyResponse] = await Promise.all([
+        // Fetch all data in parallel - INCLUDING TODAY'S TASKS
+        const today = new Date().toISOString().split('T')[0];
+        const [claimsResponse, profileResponse, historyResponse, tasksResponse] = await Promise.all([
           claimService.getClaimsByChild(user.childProfileId),
           childProfileService.getChildProfile(user.childProfileId),
-          pointService.getHistory(user.childProfileId, 100)
+          pointService.getHistory(user.childProfileId, 100),
+          taskService.getTasksForDate(user.childProfileId, today)
         ]);
         
         // Update claims
         const claims = claimsResponse.data || [];
         setTaskClaims(claims);
+        
+        // Update tasks
+        const tasks = Array.isArray(tasksResponse) ? tasksResponse : (tasksResponse.data || []);
+        setTodayTasks(tasks);
         
         // Update profile
         setChildProfile(profileResponse);
@@ -88,7 +94,7 @@ export default function ChildDashboard() {
         fetchNotifications();
         
         // Check if data changed
-        const currentDataJson = JSON.stringify({ claims, balance: totalPoints });
+        const currentDataJson = JSON.stringify({ claims, tasks, balance: totalPoints });
         const dataChanged = currentDataJson !== previousDataJson;
         
         if (dataChanged) {
@@ -141,28 +147,8 @@ export default function ChildDashboard() {
   }, [user, fetchBalance, fetchRewards, fetchNotifications, totalPoints]);
 
   // Function to fetch today's tasks
-  const fetchTodayTasks = async () => {
-    if (!user?.childProfileId) return;
-    
-    try {
-      setTasksLoading(true);
-      const today = new Date().toISOString().split('T')[0];
-      const response = await taskService.getTasksForDate(user.childProfileId, today);
-      setTodayTasks(Array.isArray(response) ? response : (response.data || []));
-    } catch (error) {
-      console.error('Error fetching today\'s tasks:', error);
-      setTodayTasks([]);
-    } finally {
-      setTasksLoading(false);
-    }
-  };
-
-  // Fetch today's tasks on mount and when user changes
-  useEffect(() => {
-    if (user?.childProfileId) {
-      fetchTodayTasks();
-    }
-  }, [user?.childProfileId]);
+  // Note: fetchTodayTasks has been removed - tasks are now fetched in the main loadData function
+  // This ensures task status updates synchronously with point balance updates
 
   const handleDismissWelcomeBanner = () => {
     localStorage.setItem('welcomeBannerDismissed', 'true');
@@ -182,15 +168,18 @@ export default function ChildDashboard() {
       console.log('Submitting claim with data:', claimData);
       await claimService.createClaim(claimData);
       
-      // Refresh data
-      await Promise.all([
-        fetchTodayTasks(),
-        fetchNotifications(), // No userId needed
+      // Refresh data - tasks will be refreshed by the polling function
+      await fetchNotifications();
+      
+      // Refresh claims and tasks immediately
+      const today = new Date().toISOString().split('T')[0];
+      const [claimsResponse, tasksResponse] = await Promise.all([
+        claimService.getClaimsByChild(user.childProfileId),
+        taskService.getTasksForDate(user.childProfileId, today)
       ]);
       
-      // Refresh claims
-      const claimsResponse = await claimService.getClaimsByChild(user.childProfileId);
       setTaskClaims(claimsResponse.data || []);
+      setTodayTasks(Array.isArray(tasksResponse) ? tasksResponse : (tasksResponse.data || []));
       
       setExpandedTask(null);
     } catch (error) {
@@ -412,10 +401,8 @@ function TasksTab({ tasks, taskClaims, loading, expandedTask, setExpandedTask, o
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {tasks.map(task => {
-        // Find the most recent claim for this task
-        const taskClaim = taskClaims
-          .filter(claim => claim.taskId === task.id)
-          .sort((a, b) => new Date(b.claimedAt) - new Date(a.claimedAt))[0];
+        // Use the claim embedded in the task object (backend already includes it)
+        const taskClaim = task.taskClaims?.[0] || null;
         
         return (
           <TaskCard
