@@ -1,47 +1,31 @@
+import { Card as DSCard } from '../ui/Card/Card';
+
 /**
- * Reusable Card component
- * Preserves exact styling from original App.jsx
+ * Backward-compatible Card component
+ *
+ * This component wraps the new design system Card component
+ * for backward compatibility with existing code.
+ *
+ * @deprecated Use `import { Card } from '@/components/ui'` for new code
  */
-export default function Card({ 
-  children, 
-  onClick, 
+export default function Card({
+  children,
+  onClick,
   hoverable = false,
   className = '',
   style = {},
+  ...props
 }) {
-  const baseStyles = {
-    background: 'white',
-    borderRadius: '16px',
-    padding: '20px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    transition: 'all 0.2s',
-    cursor: onClick || hoverable ? 'pointer' : 'default',
-    ...style,
-  };
-
-  const hoverStyles = (onClick || hoverable) ? {
-    transform: 'translateY(-4px)',
-    boxShadow: '0 8px 16px rgba(0,0,0,0.15)',
-  } : {};
-
   return (
-    <div
+    <DSCard
+      variant="default"
       onClick={onClick}
+      hoverable={hoverable || !!onClick}
       className={className}
-      style={baseStyles}
-      onMouseEnter={(e) => {
-        if (onClick || hoverable) {
-          Object.assign(e.target.style, hoverStyles);
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (onClick || hoverable) {
-          e.target.style.transform = 'translateY(0)';
-          e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-        }
-      }}
+      style={style}
+      {...props}
     >
       {children}
-    </div>
+    </DSCard>
   );
 }

@@ -1,26 +1,37 @@
 // API Configuration
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
-// Color Palette (from UI_UX_SPEC.md - Google Classroom + Joyful Holly)
+// Color Palette - Now using MotivTrack Design System
+// Mapped to design system tokens for backward compatibility
 export const COLORS = {
-  // Joyful Holly Gradient
-  gradient: 'linear-gradient(to right, #146735, #EAFDD8)',
-
-  // Google Classroom official brand colors
-  primary: '#25A667',        // Classroom green
-  accent: '#57BB8A',         // Secondary Classroom green
-  highlight: '#F6BB18',      // Classroom yellow
-
-  // UI neutrals / support colors
-  textPrimary: '#202124',
-  textSecondary: '#5f6368',
-  background: '#f8f9fa',
-  error: '#d93025',
-  white: '#ffffff',
+  // Design System Colors (Navy/Teal Theme)
+  gradient: 'linear-gradient(135deg, #16324F, #2A6F97)', // Ink Navy to Ocean Blue
   
-  // Legacy aliases for backward compatibility (will be removed)
-  gray: '#f8f9fa',
-  grayDark: '#5f6368',
+  // Semantic colors mapped to design system
+  primary: '#1FA37A',        // Emerald Teal (success/completion)
+  accent: '#E9C46A',         // Soft Gold (warmth/support)
+  highlight: '#F4A261',      // Reward Orange (points/rewards)
+  
+  // UI neutrals / support colors
+  textPrimary: '#1E2A36',    // Design system text primary
+  textSecondary: '#4F5D6B',  // Design system text secondary
+  background: '#FCFBF8',     // Design system surface page
+  backgroundLight: '#F6F3EE', // Design system surface panel
+  error: '#E76F51',          // Coral Red (destructive)
+  white: '#FFFFFF',
+  
+  // Additional design system colors
+  success: '#1FA37A',        // Emerald Teal
+  successLight: '#D1FAE5',   // Light teal background
+  primaryLight: '#E0F2FE',   // Light blue background
+  
+  // Border colors
+  borderLight: '#E7EAEC',    // Design system border muted
+  borderDefault: '#D7DDE2',  // Design system border default
+  
+  // Legacy aliases for backward compatibility
+  gray: '#FCFBF8',
+  grayDark: '#4F5D6B',
 };
 
 // User Roles

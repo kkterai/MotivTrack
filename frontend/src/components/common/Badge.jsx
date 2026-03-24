@@ -1,75 +1,41 @@
-import { COLORS } from '../../utils/constants';
+import { Badge as DSBadge } from '../ui/Badge/Badge';
 
 /**
- * Badge component for status indicators
- * Preserves exact styling from original App.jsx
+ * Backward-compatible Badge component
+ * 
+ * This component wraps the new design system Badge component
+ * and maps old variant names to new ones for backward compatibility.
+ * 
+ * @deprecated Use `import { Badge } from '@/components/ui'` for new code
  */
 export default function Badge({ 
   children, 
   variant = 'default',
   size = 'medium',
+  ...props
 }) {
-  const variants = {
-    default: {
-      background: COLORS.background,
-      color: COLORS.textSecondary,
-    },
-    primary: {
-      background: COLORS.primary,
-      color: 'white',
-    },
-    success: {
-      background: COLORS.primary,
-      color: 'white',
-    },
-    warning: {
-      background: COLORS.highlight,
-      color: COLORS.textPrimary,
-    },
-    danger: {
-      background: COLORS.error,
-      color: 'white',
-    },
-    pending: {
-      background: COLORS.highlight,
-      color: COLORS.textPrimary,
-    },
-    verified: {
-      background: COLORS.primary,
-      color: 'white',
-    },
-    redo: {
-      background: COLORS.error,
-      color: 'white',
-    },
+  // Map old variant names to new design system variants
+  const variantMap = {
+    default: 'draft',        // Maps to draft (neutral)
+    primary: 'completed',    // Maps to completed (teal)
+    success: 'completed',    // Maps to completed (teal)
+    warning: 'pending',      // Maps to pending (gold)
+    danger: 'overdue',       // Maps to overdue (coral)
+    pending: 'pending',      // Maps to pending (gold)
+    verified: 'verified',    // Maps to verified (teal)
+    redo: 'redo_requested',  // Maps to redo_requested (coral)
   };
 
-  const sizes = {
-    small: {
-      padding: '4px 8px',
-      fontSize: '12px',
-    },
-    medium: {
-      padding: '6px 12px',
-      fontSize: '14px',
-    },
-    large: {
-      padding: '8px 16px',
-      fontSize: '16px',
-    },
-  };
+  const mappedVariant = variantMap[variant] || 'draft';
 
+  // Note: Design system Badge doesn't have size variants
+  // All badges use consistent sizing for uniformity
   return (
-    <span
-      style={{
-        display: 'inline-block',
-        borderRadius: '12px',
-        fontWeight: '600',
-        ...variants[variant],
-        ...sizes[size],
-      }}
+    <DSBadge
+      variant={mappedVariant}
+      {...props}
     >
       {children}
-    </span>
+    </DSBadge>
   );
 }

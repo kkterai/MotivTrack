@@ -1,0 +1,136 @@
+/* MotivTrack Design System - Typography */
+
+/* ========================================
+   DISPLAY STYLES
+   ======================================== */
+
+.text-display-1 {
+  font-family: var(--font-serif);
+  font-size: 40px;
+  line-height: 46px;
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .text-display-1 {
+    font-size: 30px;
+    line-height: 36px;
+  }
+}
+
+/* ========================================
+   HEADING STYLES
+   ======================================== */
+
+.text-heading-1 {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  line-height: 30px;
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .text-heading-1 {
+    font-size: 22px;
+    line-height: 28px;
+  }
+}
+
+.text-heading-2 {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .text-heading-2 {
+    font-size: 18px;
+    line-height: 24px;
+  }
+}
+
+/* ========================================
+   BODY STYLES
+   ======================================== */
+
+.text-body-l {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
+}
+
+.text-body-m {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 400;
+}
+
+@media (max-width: 768px) {
+  .text-body-m {
+    line-height: 20px;
+  }
+}
+
+/* ========================================
+   LABEL STYLES
+   ======================================== */
+
+.text-label {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 600;
+}
+
+/* ========================================
+   META STYLES
+   ======================================== */
+
+.text-meta {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+/* Font families */
+.font-sans {
+  font-family: var(--font-sans);
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+/* Text colors */
+.text-primary {
+  color: var(--color-text-primary);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-inverse {
+  color: var(--color-text-inverse);
+}
+
+/* Text alignment */
+.text-left {
+  text-align: left;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}

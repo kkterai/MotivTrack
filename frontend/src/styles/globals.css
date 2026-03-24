@@ -5,6 +5,7 @@
 
 /* Import Design Tokens */
 @import "../design-system/tokens.css";
+@import "../design-system/typography.css";
 
 /* ========================================
    GLOBAL RESETS

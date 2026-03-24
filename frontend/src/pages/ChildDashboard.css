@@ -1,0 +1,188 @@
+/* Child Dashboard Styles - Using Design System Tokens */
+
+.child-dashboard {
+  min-height: 100vh;
+  background: var(--color-surface-page);
+}
+
+/* Tabs Container */
+.child-dashboard__tabs {
+  background: var(--color-surface-card);
+  border-bottom: 2px solid var(--color-border-muted);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.child-dashboard__tabs .ui-tabs {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0 var(--space-5);
+}
+
+/* Content Area */
+.child-dashboard__content {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: var(--space-5);
+}
+
+/* Loading State */
+.child-dashboard__loading {
+  text-align: center;
+  padding: var(--space-10);
+  color: var(--color-text-secondary);
+  font-size: 18px;
+}
+
+/* Task List */
+.child-dashboard__task-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Reward Grid */
+.child-dashboard__reward-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-4);
+}
+
+/* School List */
+.child-dashboard__school-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.child-dashboard__school-card {
+  padding: var(--space-4);
+}
+
+.child-dashboard__school-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.child-dashboard__school-icon {
+  font-size: 32px;
+}
+
+.child-dashboard__school-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  color: var(--color-text-primary);
+}
+
+.child-dashboard__school-date {
+  margin: var(--space-1) 0 0 0;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.child-dashboard__school-message {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  line-height: 1.6;
+}
+
+/* Welcome Banner */
+.welcome-banner {
+  background: var(--color-brand-secondary);
+  padding: var(--space-5);
+  position: relative;
+}
+
+.welcome-banner__container {
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.welcome-banner__dismiss {
+  position: absolute;
+  top: calc(var(--space-2) * -1);
+  right: calc(var(--space-2) * -1);
+  background: rgba(255, 255, 255, 0.3);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--color-text-inverse);
+  transition: background 160ms ease;
+}
+
+.welcome-banner__dismiss:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.welcome-banner__content {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-6);
+  color: var(--color-text-inverse);
+}
+
+.welcome-banner__icon {
+  font-size: 48px;
+  text-align: center;
+  margin-bottom: var(--space-4);
+}
+
+.welcome-banner__title {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 var(--space-4) 0;
+}
+
+.welcome-banner__message {
+  font-size: 16px;
+  line-height: 1.6;
+  margin-bottom: var(--space-5);
+}
+
+.welcome-banner__message p {
+  margin: 0 0 var(--space-3) 0;
+}
+
+.welcome-banner__message p:last-child {
+  margin-bottom: 0;
+}
+
+.welcome-banner__button {
+  margin-top: var(--space-5);
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .child-dashboard__content {
+    padding: var(--space-4);
+  }
+  
+  .child-dashboard__reward-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: var(--space-3);
+  }
+  
+  .welcome-banner {
+    padding: var(--space-4);
+  }
+  
+  .welcome-banner__content {
+    padding: var(--space-5);
+  }
+}

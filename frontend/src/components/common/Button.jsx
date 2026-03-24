@@ -1,92 +1,47 @@
-import { COLORS } from '../../utils/constants';
+import { Button as DSButton } from '../ui/Button/Button';
 
 /**
- * Reusable Button component with variants
- * Preserves exact styling from original App.jsx
+ * Backward-compatible Button component
+ *
+ * This component wraps the new design system Button component
+ * and maps old variant names to new ones for backward compatibility.
+ *
+ * @deprecated Use `import { Button } from '@/components/ui'` for new code
  */
-export default function Button({ 
-  children, 
-  onClick, 
-  variant = 'primary', 
+export default function Button({
+  children,
+  onClick,
+  variant = 'primary',
   disabled = false,
   fullWidth = false,
   type = 'button',
   className = '',
+  ...props
 }) {
-  const baseStyles = {
-    padding: '12px 24px',
-    borderRadius: '12px',
-    border: 'none',
-    fontSize: '16px',
-    fontWeight: '600',
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    transition: 'all 0.2s',
-    opacity: disabled ? 0.5 : 1,
-    width: fullWidth ? '100%' : 'auto',
+  // Map old variant names to new design system variants
+  const variantMap = {
+    primary: 'primary',      // Maps to navy
+    secondary: 'secondary',  // Maps to white with border
+    success: 'success',      // Maps to teal
+    warning: 'secondary',    // Maps to secondary (no direct warning variant)
+    danger: 'destructive',   // Maps to coral red
+    outline: 'ghost',        // Maps to ghost (transparent)
   };
 
-  const variants = {
-    primary: {
-      background: COLORS.gradient,
-      color: 'white',
-      boxShadow: '0 4px 12px rgba(20, 103, 53, 0.4)',
-    },
-    secondary: {
-      background: COLORS.accent,
-      color: 'white',
-      boxShadow: '0 4px 12px rgba(87, 187, 138, 0.4)',
-    },
-    success: {
-      background: COLORS.primary,
-      color: 'white',
-      boxShadow: '0 4px 12px rgba(37, 166, 103, 0.4)',
-    },
-    warning: {
-      background: COLORS.highlight,
-      color: COLORS.textPrimary,
-      boxShadow: '0 4px 12px rgba(246, 187, 24, 0.4)',
-    },
-    danger: {
-      background: COLORS.error,
-      color: 'white',
-      boxShadow: '0 4px 12px rgba(217, 48, 37, 0.4)',
-    },
-    outline: {
-      background: 'transparent',
-      color: COLORS.primary,
-      border: `2px solid ${COLORS.primary}`,
-      boxShadow: 'none',
-    },
-  };
-
-  const hoverStyles = !disabled ? {
-    transform: 'translateY(-2px)',
-    boxShadow: variants[variant].boxShadow?.replace('0.4', '0.6'),
-  } : {};
+  const mappedVariant = variantMap[variant] || 'primary';
 
   return (
-    <button
+    <DSButton
       type={type}
+      variant={mappedVariant}
+      size="md"
       onClick={onClick}
       disabled={disabled}
+      fullWidth={fullWidth}
       className={className}
-      style={{
-        ...baseStyles,
-        ...variants[variant],
-      }}
-      onMouseEnter={(e) => {
-        if (!disabled) {
-          Object.assign(e.target.style, hoverStyles);
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!disabled) {
-          e.target.style.transform = 'translateY(0)';
-          e.target.style.boxShadow = variants[variant].boxShadow;
-        }
-      }}
+      {...props}
     >
       {children}
-    </button>
+    </DSButton>
   );
 }

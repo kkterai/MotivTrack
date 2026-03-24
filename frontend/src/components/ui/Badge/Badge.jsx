@@ -3,9 +3,9 @@ import './Badge.css';
 
 /**
  * Badge Component - Design System Primitive
- * 
+ *
  * Read-only semantic indicators for task/reward status
- * 
+ *
  * Variants:
  * - completed: Task completed
  * - pending: Awaiting review
@@ -15,6 +15,7 @@ import './Badge.css';
  * - draft: Draft state
  * - verified: Approved/verified
  * - redo_requested: Needs to be redone
+ * - reward: Reward/points earned (uses Reward Orange)
  */
 
 export function Badge({

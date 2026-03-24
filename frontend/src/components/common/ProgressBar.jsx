@@ -1,69 +1,34 @@
-import { COLORS } from '../../utils/constants';
+import { ProgressBar as DSProgressBar } from '../ui/ProgressBar/ProgressBar';
 
 /**
- * Animated Progress Bar component
- * Preserves exact styling from original App.jsx
+ * Backward-compatible ProgressBar component
+ * 
+ * This component wraps the new design system ProgressBar component
+ * for backward compatibility with existing code.
+ * 
+ * @deprecated Use `import { ProgressBar } from '@/components/ui'` for new code
  */
 export default function ProgressBar({
   current,
   max,
-  color = COLORS.gradient,
-  height = 24,
+  color,
+  height,
   showLabel = true,
   animated = true,
+  ...props
 }) {
-  const percentage = max > 0 ? Math.min((current / max) * 100, 100) : 0;
+  // Map old props to new design system props
+  // Old: current/max, New: value/max
+  const value = current !== undefined ? current : 0;
+  const maxValue = max !== undefined ? max : 100;
 
   return (
-    <div style={{ width: '100%' }}>
-      <div
-        style={{
-          width: '100%',
-          height: `${height}px`,
-          background: COLORS.background,
-          borderRadius: '12px',
-          overflow: 'hidden',
-          position: 'relative',
-        }}
-      >
-        <div
-          style={{
-            width: `${percentage}%`,
-            height: '100%',
-            background: color,
-            borderRadius: '12px',
-            transition: animated ? 'width 0.5s ease-out' : 'none',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            paddingRight: '8px',
-          }}
-        >
-          {showLabel && percentage > 15 && (
-            <span
-              style={{
-                color: 'white',
-                fontSize: '12px',
-                fontWeight: '600',
-              }}
-            >
-              {current}/{max}
-            </span>
-          )}
-        </div>
-      </div>
-      {showLabel && percentage <= 15 && (
-        <div
-          style={{
-            marginTop: '4px',
-            fontSize: '12px',
-            color: COLORS.textSecondary,
-            textAlign: 'right',
-          }}
-        >
-          {current}/{max}
-        </div>
-      )}
-    </div>
+    <DSProgressBar
+      value={value}
+      max={maxValue}
+      showValue={showLabel}
+      variant="success"
+      {...props}
+    />
   );
 }
