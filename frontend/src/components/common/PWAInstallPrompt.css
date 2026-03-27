@@ -1,0 +1,132 @@
+/* PWA Install Prompt - Using MotivTrack Design System */
+
+.pwa-install-prompt {
+  position: fixed;
+  bottom: var(--space-4);
+  left: var(--space-4);
+  right: var(--space-4);
+  z-index: 1000;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.pwa-install-prompt__content {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.pwa-install-prompt__icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  background: var(--color-brand-primary);
+  color: var(--color-text-inverse);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pwa-install-prompt__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.pwa-install-prompt__title {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.pwa-install-prompt__description {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.pwa-install-prompt__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.pwa-install-prompt__button {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pwa-install-prompt__button--primary {
+  background: var(--color-brand-primary);
+  color: var(--color-text-inverse);
+}
+
+.pwa-install-prompt__button--primary:hover {
+  background: var(--color-brand-secondary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.pwa-install-prompt__button--primary:active {
+  transform: translateY(0);
+}
+
+.pwa-install-prompt__button--secondary {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-default);
+}
+
+.pwa-install-prompt__button--secondary:hover {
+  background: var(--color-surface-muted);
+  color: var(--color-text-primary);
+}
+
+/* Responsive adjustments */
+@media (min-width: 640px) {
+  .pwa-install-prompt {
+    left: auto;
+    right: var(--space-6);
+    max-width: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pwa-install-prompt__content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .pwa-install-prompt__actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .pwa-install-prompt__button {
+    width: 100%;
+  }
+}

@@ -8,6 +8,7 @@ export { default as ProgressBar } from './ProgressBar';
 // These components don't have design system equivalents yet
 export { default as Input } from './Input';
 export { default as Modal } from './Modal';
+export { default as PWAInstallPrompt } from './PWAInstallPrompt';
 
 // Re-export design system components for direct use
 export { Button as DSButton } from '../ui/Button/Button';
